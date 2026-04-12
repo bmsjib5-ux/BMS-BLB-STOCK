@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMS Blood Stock Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef4;
+    --border: #d0d9e3;
+    --text: #1a2332;
+    --text-muted: #5a6b7f;
+    --primary: #dc2626;
+    --primary-light: #fecaca;
+    --primary-glow: rgba(220,38,38,0.1);
+    --success: #059669;
+    --success-bg: rgba(5,150,105,0.08);
+    --error: #dc2626;
+    --error-bg: rgba(220,38,38,0.08);
+    --warn: #d97706;
+    --warn-bg: rgba(217,119,6,0.08);
+    --accent: #dc2626;
+    --teal: #059669;
+    --blue: #2563eb;
+    --purple: #7c3aed;
+    --orange: #ea580c;
+    --pink: #db2777;
+    --cyan: #0891b2;
+    --indigo: #4f46e5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: #450a0a;
+    border-bottom: 1px solid #7f1d1d;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo { display: flex; align-items: center; gap: 10px; }
+  .logo-shield {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #dc2626, #f87171);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff;
+  }
+  .header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; color: #fff; }
+  .header h1 span { color: #f87171; }
+  .header-subtitle {
+    font-size: 11px; color: rgba(255,255,255,0.5);
+    padding: 2px 8px; background: rgba(255,255,255,0.08); border-radius: 4px;
+  }
+  .header-spacer { flex: 1; }
+  .conn-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+  }
+  .conn-badge.disconnected {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15);
+  }
+  .conn-badge.connected {
+    background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);
+  }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .refresh-btn {
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #dc2626, #f87171);
+    border: none; border-radius: 6px;
+    color: #fff; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .refresh-btn:hover { filter: brightness(1.15); }
+  .refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+
+  /* Layout */
+  .layout { display: flex; height: calc(100vh - 56px); }
+
+  /* Sidebar */
+  .sidebar {
+    width: 300px; min-width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .sidebar-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .section-title {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .field-group { margin-bottom: 10px; }
+  .field-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+  .field-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .field-input:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+  }
+  .status-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; margin-top: 6px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+  .status-dot.ok { background: var(--success); }
+
+  .btn {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); color: var(--text);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--primary); background: var(--primary-glow); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.connected { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+
+  /* Content */
+  .content {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* Summary Cards */
+  .summary-row {
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+  .summary-card {
+    flex: 1; min-width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .summary-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .summary-card .icon { font-size: 24px; margin-bottom: 4px; }
+  .summary-card .val {
+    font-size: 28px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .summary-card .label {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+  .summary-card.total .val { color: var(--error); }
+  .summary-card.type .val { color: var(--blue); }
+  .summary-card.group .val { color: var(--purple); }
+  .summary-card.status .val { color: var(--teal); }
+
+  /* Blood Type Cards */
+  .blood-type-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  .bt-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .bt-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  .bt-card .bt-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .bt-card .bt-count {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+  .bt-card .bt-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .bt-card .bt-stripe {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+  .bt-card.has-stock { border-color: transparent; }
+  .bt-card.no-stock { opacity: 0.45; }
+
+  /* Dashboard Sections */
+  .dash-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .dash-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-section-title {
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dash-section-badge {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Bar Chart */
+  .bar-chart { padding: 16px 18px; }
+  .bar-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .bar-label {
+    width: 160px; min-width: 160px;
+    font-size: 13px; font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    flex: 1; height: 28px;
+    background: var(--bg);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 6px;
+    transition: width 0.6s ease;
+    display: flex; align-items: center;
+    padding-left: 10px;
+    min-width: 40px;
+  }
+  .bar-fill span {
+    font-size: 12px; font-weight: 700; color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .bar-count {
+    width: 60px; min-width: 60px;
+    font-size: 14px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
+  }
+
+  /* Table */
+  .detail-table-wrap {
+    overflow-x: auto;
+  }
+  .detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .detail-table th {
+    position: sticky; top: 0;
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .detail-table td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .detail-table tr:hover td { background: var(--primary-glow); }
+  .detail-table .num { text-align: right; font-weight: 700; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .tag-a { background: #fef3c7; color: #92400e; }
+  .tag-b { background: #dbeafe; color: #1e40af; }
+  .tag-o { background: #dcfce7; color: #166534; }
+  .tag-ab { background: #fce7f3; color: #9d174d; }
+  .tag-default { background: var(--surface2); color: var(--text-muted); }
+
+  /* Spinner */
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Loading */
+  .loading-overlay {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    gap: 12px;
+  }
+  .loading-overlay .spinner { font-size: 28px; }
+  .loading-text { font-size: 13px; font-weight: 600; }
+
+  /* Empty state */
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    gap: 8px;
+  }
+  .empty-icon { font-size: 40px; opacity: 0.3; }
+  .empty-text { font-size: 14px; font-weight: 600; }
+  .empty-sub { font-size: 12px; }
+
+  /* Toast */
+  .toast-wrap {
+    position: fixed; bottom: 16px; right: 16px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    animation: slideIn 0.3s ease;
+    max-width: 380px;
+  }
+  .toast.ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+  .toast.err { background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+  .toast.info { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+  /* Timestamp */
+  .timestamp {
+    font-size: 11px; color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Auto-refresh */
+  .auto-refresh-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px;
+  }
+  .auto-refresh-row label { font-size: 11px; color: var(--text-muted); cursor: pointer; }
+  .auto-refresh-row select {
+    font-size: 11px; padding: 2px 6px;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg); color: var(--text);
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .blood-type-cards { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; height: auto; }
+    .sidebar { width: 100%; min-width: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .blood-type-cards { grid-template-columns: repeat(4, 1fr); }
+    .bt-card .bt-count { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-shield">&#9879;</div>
+    <h1>BMS <span>Blood Stock</span></h1>
+  </div>
+  <span class="header-subtitle">Blood Inventory Dashboard</span>
+  <div class="header-spacer"></div>
+  <button class="refresh-btn" id="refreshBtn" disabled onclick="loadDashboard()">
+    <span id="refreshBtnText">Refresh</span>
+  </button>
+  <div class="conn-badge disconnected" id="connBadge">
+    <span class="conn-dot"></span>
+    <span id="connText">Not Connected</span>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">BMS Session</div>
+      <div class="field-group">
+        <div class="field-label">Session ID (GUID)</div>
+        <input type="text" class="field-input" id="sessionId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      </div>
+      <div class="status-row">
+        <span class="status-dot" id="sessionDot"></span>
+        <span id="sessionStatusTxt" style="color:var(--text-muted)">No Session ID</span>
+      </div>
+      <div id="sessionUserInfo" style="display:none; margin-top:6px; font-size:12px;"></div>
+      <button class="btn" id="connectBtn" style="margin-top:10px" onclick="handleConnect()">Connect Session</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Auto Refresh</div>
+      <div class="auto-refresh-row">
+        <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()">
+        <label for="autoRefreshCheck">Auto refresh every</label>
+        <select id="autoRefreshInterval" onchange="toggleAutoRefresh()">
+          <option value="30">30 sec</option>
+          <option value="60" selected>1 min</option>
+          <option value="120">2 min</option>
+          <option value="300">5 min</option>
+        </select>
+      </div>
+      <div class="status-row">
+        <span class="timestamp" id="lastRefreshTime">-</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Statistics</div>
+      <div style="font-size:12px; color:var(--text-muted)">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Total Blood Bags</span>
+          <span style="font-weight:700; color:var(--error); font-family:'JetBrains Mono',monospace" id="sideTotal">-</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Blood Types</span>
+          <span style="font-weight:700; color:var(--blue); font-family:'JetBrains Mono',monospace" id="sideTypes">-</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Blood Groups</span>
+          <span style="font-weight:700; color:var(--purple); font-family:'JetBrains Mono',monospace" id="sideGroups">-</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Statuses</span>
+          <span style="font-weight:700; color:var(--teal); font-family:'JetBrains Mono',monospace" id="sideStatuses">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="dashContent">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">&#129656;</div>
+      <div class="empty-text">Blood Stock Dashboard</div>
+      <div class="empty-sub">Connect BMS Session to load blood inventory data</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// == Constants ==
+const SESSION_COOKIE_NAME = 'bms-session-id';
+const SESSION_COOKIE_DAYS = 7;
+const SESSION_URL_PARAM = 'bms-session-id';
+const DEFAULT_TIMEOUT = 30000;
+const APP_NAME = 'BMS.BLB.StockDashboard';
+
+// == State ==
+let sessionConnected = false;
+let sessionData = null;
+let connectionConfig = null;
+let userInfo = null;
+let autoRefreshTimer = null;
+let dashboardData = [];
+
+// == Color palettes ==
+const TYPE_COLORS = ['#dc2626','#2563eb','#7c3aed','#059669','#ea580c','#db2777','#0891b2','#4f46e5','#ca8a04','#64748b','#be185d','#0d9488'];
+const GROUP_COLORS = { 'A': '#f59e0b', 'B': '#3b82f6', 'O': '#22c55e', 'AB': '#ec4899' };
+const STATUS_COLORS = ['#059669','#2563eb','#d97706','#dc2626','#7c3aed','#ea580c','#0891b2','#64748b'];
+
+// == Utilities ==
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showToast(type, msg) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+
+function minifySql(sql) {
+  return sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim();
+}
+
+function nowStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+
+function numberFormat(n) {
+  return Number(n).toLocaleString('th-TH');
+}
+
+function bloodGroupTag(group) {
+  const g = (group || '').toUpperCase().trim();
+  if (g.includes('A') && g.includes('B')) return `<span class="tag tag-ab">${escHtml(group)}</span>`;
+  if (g.startsWith('A')) return `<span class="tag tag-a">${escHtml(group)}</span>`;
+  if (g.startsWith('B')) return `<span class="tag tag-b">${escHtml(group)}</span>`;
+  if (g.startsWith('O')) return `<span class="tag tag-o">${escHtml(group)}</span>`;
+  return `<span class="tag tag-default">${escHtml(group || '-')}</span>`;
+}
+
+// == Cookie / URL ==
+function setSessionCookie(id) {
+  const expires = new Date(Date.now() + SESSION_COOKIE_DAYS * 864e5).toUTCString();
+  const secure = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${SESSION_COOKIE_NAME}=${encodeURIComponent(id)}; expires=${expires}; path=/${secure}; SameSite=Lax`;
+}
+function getSessionCookie() {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + SESSION_COOKIE_NAME + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function removeSessionCookie() {
+  document.cookie = `${SESSION_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
+function getSessionFromUrl() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get(SESSION_URL_PARAM)?.trim() || null;
+}
+function removeSessionFromUrl() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.has(SESSION_URL_PARAM)) {
+    url.searchParams.delete(SESSION_URL_PARAM);
+    window.history.replaceState({}, '', url.toString());
+  }
+}
+
+// == Session ==
+async function validateSession(sessionId) {
+  try {
+    const url = `https://hosxp.net/phapi/PasteJSON?Action=GET&code=${encodeURIComponent(sessionId)}`;
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      signal: controller.signal, mode: 'cors',
+    });
+    clearTimeout(tid);
+    if (!res.ok) return { MessageCode: res.status, Message: `HTTP ${res.status}` };
+    return await res.json();
+  } catch (e) {
+    return { MessageCode: 0, Message: e.name === 'AbortError' ? 'Timeout' : e.message };
+  }
+}
+
+function extractConnectionConfig(data) {
+  const result = data.result || {};
+  const ui = result.user_info || {};
+  let apiUrl, apiAuthKey;
+  if (result.key_value && typeof result.key_value === 'object') {
+    apiUrl = result.key_value['hosxp.api_url'];
+    apiAuthKey = result.key_value['hosxp.api_auth_key'];
+  }
+  if (!apiUrl) apiUrl = ui['hosxp.api_url'];
+  if (!apiAuthKey) apiAuthKey = ui['hosxp.api_auth_key'];
+  if (!apiUrl) apiUrl = ui.bms_url;
+  if (!apiAuthKey) apiAuthKey = ui.bms_session_code;
+  if (!apiAuthKey && typeof result.key_value === 'string') apiAuthKey = result.key_value;
+  return { apiUrl: (apiUrl || '').replace(/\/$/, ''), apiAuthKey: apiAuthKey || '' };
+}
+
+async function handleConnect() {
+  if (sessionConnected) { disconnectSession(); return; }
+
+  const sessionId = document.getElementById('sessionId').value.trim();
+  if (!sessionId) { showToast('err', 'Please enter BMS Session ID'); return; }
+
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+
+  sessionData = await validateSession(sessionId);
+  btn.disabled = false;
+
+  if (!sessionData || sessionData.MessageCode !== 200) {
+    const msg = sessionData?.MessageCode === 500
+      ? 'Session expired - please re-login'
+      : sessionData?.Message || 'Failed to validate';
+    showToast('err', msg);
+    btn.textContent = 'Connect Session';
+    sessionData = null;
+    return;
+  }
+
+  connectionConfig = extractConnectionConfig(sessionData);
+  userInfo = sessionData.result?.user_info || {};
+
+  if (!connectionConfig.apiUrl) {
+    showToast('err', 'No API URL found in session');
+    btn.textContent = 'Connect Session';
+    sessionData = null; connectionConfig = null;
+    return;
+  }
+
+  sessionConnected = true;
+  setSessionCookie(sessionId);
+
+  btn.textContent = 'Disconnect';
+  btn.classList.add('connected');
+  document.getElementById('refreshBtn').disabled = false;
+
+  const badge = document.getElementById('connBadge');
+  badge.className = 'conn-badge connected';
+  document.getElementById('connText').textContent = userInfo.name || 'Connected';
+
+  const infoDiv = document.getElementById('sessionUserInfo');
+  infoDiv.style.display = 'block';
+  infoDiv.innerHTML = `<span style="color:var(--success)">${escHtml(userInfo.name || '')}</span>
+    <span style="color:var(--text-muted); margin-left:6px">${escHtml(userInfo.location || '')}</span>`;
+
+  document.getElementById('sessionDot').className = 'status-dot ok';
+  document.getElementById('sessionStatusTxt').textContent = 'Session Active';
+  document.getElementById('sessionStatusTxt').style.color = 'var(--success)';
+
+  showToast('ok', `Connected: ${userInfo.name || 'OK'} @ ${userInfo.location || ''}`);
+
+  // Auto-load dashboard
+  loadDashboard();
+}
+
+function disconnectSession() {
+  stopAutoRefresh();
+  sessionConnected = false;
+  sessionData = null;
+  connectionConfig = null;
+  userInfo = null;
+  removeSessionCookie();
+
+  document.getElementById('connectBtn').textContent = 'Connect Session';
+  document.getElementById('connectBtn').classList.remove('connected');
+  document.getElementById('refreshBtn').disabled = true;
+
+  const badge = document.getElementById('connBadge');
+  badge.className = 'conn-badge disconnected';
+  document.getElementById('connText').textContent = 'Not Connected';
+
+  document.getElementById('sessionUserInfo').style.display = 'none';
+  document.getElementById('sessionDot').className = 'status-dot';
+  document.getElementById('sessionStatusTxt').textContent = 'No Session ID';
+  document.getElementById('sessionStatusTxt').style.color = 'var(--text-muted)';
+
+  // Reset sidebar stats
+  ['sideTotal','sideTypes','sideGroups','sideStatuses'].forEach(id => {
+    document.getElementById(id).textContent = '-';
+  });
+  document.getElementById('lastRefreshTime').textContent = '-';
+
+  // Reset content
+  document.getElementById('dashContent').innerHTML = `
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">&#129656;</div>
+      <div class="empty-text">Blood Stock Dashboard</div>
+      <div class="empty-sub">Connect BMS Session to load blood inventory data</div>
+    </div>`;
+}
+
+// == SQL Execution ==
+async function executeQuery(sql) {
+  if (!sessionConnected || !connectionConfig) return null;
+  const fullUrl = `${connectionConfig.apiUrl}/api/sql?sql=${encodeURIComponent(minifySql(sql))}&app=${encodeURIComponent(APP_NAME)}`;
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+    const res = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${connectionConfig.apiAuthKey}`,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(tid);
+    const json = await res.json();
+    if (json.MessageCode === 200) {
+      return json.data || json.result?.data || [];
+    } else {
+      showToast('err', `Query Error: ${json.Message || 'Unknown'}`);
+      return null;
+    }
+  } catch (e) {
+    showToast('err', e.name === 'AbortError' ? 'Query Timeout' : `Error: ${e.message}`);
+    return null;
+  }
+}
+
+// == Dashboard ==
+async function loadDashboard() {
+  if (!sessionConnected) return;
+
+  const content = document.getElementById('dashContent');
+  const btn = document.getElementById('refreshBtn');
+  const btnText = document.getElementById('refreshBtnText');
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner">&#8635;</span> Loading...';
+
+  content.innerHTML = `
+    <div class="loading-overlay">
+      <div class="spinner" style="font-size:28px">&#8635;</div>
+      <div class="loading-text">Loading blood stock data...</div>
+    </div>`;
+
+  // Main query: blood stock inventory (พร้อมใช้งาน)
+  const sql = `
+    SELECT
+      bsl.blb_stock_list_id,
+      bsl.blb_stock_id,
+      bb.blb_bag_donor_number,
+      bg.name AS blood_group_name,
+      bt.blb_blood_items_nm,
+      bt.blb_blood_items_name,
+      CONCAT(bt.blb_blood_items_nm,' : ',bt.blb_blood_items_name) AS blb_blood_items_full,
+      bb.blb_bag_mfg_date,
+      bb.blb_bag_expire_date,
+      bb.blb_bag_available_date,
+      bbs.blb_bag_status_name,
+      bsl.blb_bag_id,
+      st.blb_stock_date,
+      sst.blb_stock_status_name,
+      CONCAT(dn.blb_donator_pname,dn.blb_donator_fname,' ',dn.blb_donator_lname) AS dname,
+      bbr.blb_blood_reg_type_id,
+      bbr.blb_reg_external_id,
+      bbr.blb_reg_internal_id,
+      bbrh.blb_blood_rh_name
+    FROM blb_stock_list bsl
+    LEFT OUTER JOIN blb_stock bs ON bsl.blb_stock_id = bs.blb_stock_id
+    LEFT OUTER JOIN blb_blood_reg bbr ON bbr.blb_blood_reg_id = bs.blb_blood_reg_id
+    LEFT OUTER JOIN blb_reg_internal bri ON bri.blb_reg_internal_id = bbr.blb_reg_internal_id
+    LEFT OUTER JOIN blb_donator dn ON dn.blb_donator_id = bri.blb_donator_id
+    LEFT OUTER JOIN blb_bag bb ON bsl.blb_bag_id = bb.blb_bag_id
+    LEFT OUTER JOIN blood_group bg ON bb.blood_id = bg.blood_id
+    LEFT OUTER JOIN blb_blood_items bt ON bb.blb_blood_items_id = bt.blb_blood_items_id
+    LEFT OUTER JOIN blb_bag_status bbs ON bb.blb_bag_status_id = bbs.blb_bag_status_id
+    LEFT OUTER JOIN blb_stock st ON bsl.blb_stock_id = st.blb_stock_id
+    LEFT OUTER JOIN blb_stock_status sst ON st.blb_stock_status_id = sst.blb_stock_status_id
+    LEFT OUTER JOIN blb_blood_rh bbrh ON bb.rh_id = bbrh.blb_blood_rh_id
+    WHERE 1=1
+      AND bbs.blb_bag_status_name = 'พร้อมใช้งาน'
+      AND bsl.blb_stock_list_id IN (
+        SELECT MAX(blb_stock_list_id) FROM blb_stock_list GROUP BY blb_bag_id
+      )
+    ORDER BY bb.blb_bag_donor_number ASC
+  `;
+
+  const data = await executeQuery(sql);
+  btn.disabled = false;
+  btnText.textContent = 'Refresh';
+
+  if (!data) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">&#9888;</div>
+        <div class="empty-text">Failed to load data</div>
+        <div class="empty-sub">Please check your connection and try again</div>
+      </div>`;
+    return;
+  }
+
+  dashboardData = data;
+  document.getElementById('lastRefreshTime').textContent = `Last: ${nowStr()}`;
+
+  renderDashboard(data);
+}
+
+function renderDashboard(data) {
+  const content = document.getElementById('dashContent');
+
+  if (!data || data.length === 0) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">&#10003;</div>
+        <div class="empty-text">No blood stock found</div>
+        <div class="empty-sub">No blood bags with status "พร้อมใช้งาน" in inventory</div>
+      </div>`;
+    ['sideTotal','sideTypes','sideGroups','sideStatuses'].forEach(id => {
+      document.getElementById(id).textContent = '0';
+    });
+    return;
+  }
+
+  // Aggregate by blood type (ชนิดเลือด = blb_blood_items_nm)
+  const byType = {};
+  data.forEach(r => {
+    const key = r.blb_blood_items_nm || 'Unknown';
+    byType[key] = (byType[key] || 0) + 1;
+  });
+  const typeArr = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+
+  // Aggregate by blood group + Rh (หมู่เลือด)
+  const byGroup = {};
+  data.forEach(r => {
+    const grp = r.blood_group_name || 'Unknown';
+    const rh = r.blb_blood_rh_name || '';
+    const key = rh ? `${grp} ${rh}` : grp;
+    byGroup[key] = (byGroup[key] || 0) + 1;
+  });
+  const groupArr = Object.entries(byGroup).sort((a, b) => b[1] - a[1]);
+
+  // Aggregate by stock status (สถานะเลือด)
+  const byStatus = {};
+  data.forEach(r => {
+    const key = r.blb_stock_status_name || r.blb_bag_status_name || 'Unknown';
+    byStatus[key] = (byStatus[key] || 0) + 1;
+  });
+  const statusArr = Object.entries(byStatus).sort((a, b) => b[1] - a[1]);
+
+  // Cross-tab: blood type x blood group
+  const crossTab = {};
+  data.forEach(r => {
+    const type = r.blb_blood_items_nm || 'Unknown';
+    const grp = r.blood_group_name || 'Unknown';
+    const rh = r.blb_blood_rh_name || '';
+    const group = rh ? `${grp} ${rh}` : grp;
+    if (!crossTab[type]) crossTab[type] = {};
+    crossTab[type][group] = (crossTab[type][group] || 0) + 1;
+  });
+
+  // Helper to get group key for a row
+  function getGroupKey(r) {
+    const grp = r.blood_group_name || 'Unknown';
+    const rh = r.blb_blood_rh_name || '';
+    return rh ? `${grp} ${rh}` : grp;
+  }
+
+  // Update sidebar stats
+  document.getElementById('sideTotal').textContent = numberFormat(data.length);
+  document.getElementById('sideTypes').textContent = typeArr.length;
+  document.getElementById('sideGroups').textContent = groupArr.length;
+  document.getElementById('sideStatuses').textContent = statusArr.length;
+
+  const totalMax = data.length;
+
+  // All unique groups for cross-tab header
+  const allGroups = [...new Set(data.map(r => getGroupKey(r)))].sort();
+
+  let html = '';
+
+  // Blood Type definition: name, color, bg
+  const BLOOD_TYPES = [
+    { nm: 'PRC',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+    { nm: 'LPRC',  color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
+    { nm: 'LDPRC', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+    { nm: 'FFP',   color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+    { nm: 'PC',    color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+    { nm: 'CRYO',  color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+    { nm: 'SDP',   color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  ];
+
+  // Total card + blood type cards
+  html += `<div class="blood-type-cards">`;
+  // Total
+  html += `<div class="bt-card has-stock" style="border-color:#991b1b; background:linear-gradient(135deg,#450a0a,#7f1d1d);">
+    <div class="bt-stripe" style="background:#dc2626"></div>
+    <div class="bt-name" style="color:#fca5a5">TOTAL</div>
+    <div class="bt-count" style="color:#fff">${numberFormat(data.length)}</div>
+    <div class="bt-label" style="color:#fca5a5">ถุงเลือดคงคลัง</div>
+  </div>`;
+
+  BLOOD_TYPES.forEach(bt => {
+    const count = byType[bt.nm] || 0;
+    const hasStock = count > 0;
+    html += `<div class="bt-card ${hasStock ? 'has-stock' : 'no-stock'}" style="background:${bt.bg}; border-color:${hasStock ? bt.border : 'var(--border)'};">
+      <div class="bt-stripe" style="background:${bt.color}"></div>
+      <div class="bt-name" style="color:${bt.color}">${bt.nm}</div>
+      <div class="bt-count" style="color:${bt.color}">${numberFormat(count)}</div>
+      <div class="bt-label">คงเหลือ</div>
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  // === Build stacked data: each blood type -> count per blood group (A,B,AB,O) ===
+  const BLOOD_GROUPS_ORDER = ['A', 'B', 'AB', 'O'];
+  const BG_COLORS = { A: '#f59e0b', B: '#3b82f6', AB: '#ec4899', O: '#22c55e' };
+
+  // crossTabByGroup: { typeName: { A: n, B: n, AB: n, O: n } }
+  const crossTabByGroup = {};
+  data.forEach(r => {
+    const type = r.blb_blood_items_nm || 'Unknown';
+    const grp = (r.blood_group_name || '').trim().toUpperCase();
+    if (!crossTabByGroup[type]) crossTabByGroup[type] = {};
+    // Map to A/B/AB/O
+    let key = 'Other';
+    if (grp === 'AB') key = 'AB';
+    else if (grp === 'A') key = 'A';
+    else if (grp === 'B') key = 'B';
+    else if (grp === 'O') key = 'O';
+    crossTabByGroup[type][key] = (crossTabByGroup[type][key] || 0) + 1;
+  });
+
+  // Build sorted type list (descending by total) with all BLOOD_TYPES included
+  const allTypeNames = BLOOD_TYPES.map(bt => bt.nm);
+  // Add any types from data not in BLOOD_TYPES
+  typeArr.forEach(([nm]) => { if (!allTypeNames.includes(nm)) allTypeNames.push(nm); });
+
+  const stackedRows = allTypeNames.map(nm => {
+    const grpData = crossTabByGroup[nm] || {};
+    const groups = BLOOD_GROUPS_ORDER.map(g => grpData[g] || 0);
+    const total = groups.reduce((s, v) => s + v, 0);
+    return { nm, groups, total };
+  });
+  stackedRows.sort((a, b) => b.total - a.total);
+
+  // Calculate chart height based on rows
+  const stackedChartH = Math.max(320, stackedRows.length * 52 + 80);
+
+  // === Charts: Stacked horizontal + Blood Group vertical ===
+  html += `<div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:20px;">`;
+
+  // -- Chart 1: Stacked Horizontal Bar (ชนิดเลือด x หมู่เลือด) --
+  html += `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">&#9874; จำนวนคงเหลือแยกตามชนิดเลือด</div>
+      <span class="dash-section-badge" style="background:var(--error-bg);color:var(--error);">${typeArr.length} ชนิด</span>
+    </div>
+    <div style="padding:16px 18px;">
+      <div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px;">
+        ${BLOOD_GROUPS_ORDER.map(g => `<div style="display:flex;align-items:center;gap:4px;">
+          <span style="width:14px;height:14px;border-radius:3px;background:${BG_COLORS[g]};display:inline-block;"></span>
+          <span style="font-size:12px;font-weight:700;color:#475569;">Group ${g}</span>
+        </div>`).join('')}
+      </div>
+      <canvas id="chartStackedType" height="${stackedChartH}"></canvas>
+    </div>
+  </div>`;
+
+  // -- Chart 2: Blood Group Donut (หมู่เลือด) --
+  html += `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">&#9830; จำนวนคงเหลือแยกตามหมู่เลือด</div>
+      <span class="dash-section-badge" style="background:#f3e8ff;color:var(--purple);">${groupArr.length} หมู่</span>
+    </div>
+    <div style="padding:20px 18px; display:flex; justify-content:center;">
+      <canvas id="chartBloodGroup" width="360" height="${stackedChartH}" style="max-width:100%;"></canvas>
+    </div>
+  </div>`;
+
+  html += `</div>`;
+
+  // Store chart data
+  window._chartStackedData = { rows: stackedRows, groups: BLOOD_GROUPS_ORDER, colors: BG_COLORS, bloodTypes: BLOOD_TYPES };
+  window._chartGroupData = { labels: groupArr.map(g=>g[0]), values: groupArr.map(g=>g[1]), total: data.length };
+
+  // Cross-tab Table: Blood Type x Blood Group
+  html += `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">&#9638; Blood Type x Blood Group</div>
+      <span class="dash-section-badge" style="background:var(--warn-bg);color:var(--warn);">Cross-Tab</span>
+    </div>
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead><tr>
+          <th>Blood Type</th>`;
+  allGroups.forEach(g => {
+    html += `<th style="text-align:center">${bloodGroupTag(g)}</th>`;
+  });
+  html += `<th style="text-align:right">Total</th></tr></thead><tbody>`;
+
+  typeArr.forEach(([typeName]) => {
+    const row = crossTab[typeName] || {};
+    const rowTotal = Object.values(row).reduce((s, v) => s + v, 0);
+    html += `<tr><td style="font-weight:700">${escHtml(typeName)}</td>`;
+    allGroups.forEach(g => {
+      const v = row[g] || 0;
+      html += `<td class="num" style="text-align:center;${v > 0 ? 'color:var(--text)' : 'color:var(--border)'}">${v || '-'}</td>`;
+    });
+    html += `<td class="num" style="text-align:right;color:var(--error);font-weight:700">${numberFormat(rowTotal)}</td></tr>`;
+  });
+
+  // Footer totals
+  html += `<tr style="background:var(--surface2);font-weight:700"><td>Total</td>`;
+  allGroups.forEach(g => {
+    const colTotal = data.filter(r => getGroupKey(r) === g).length;
+    html += `<td class="num" style="text-align:center;color:var(--purple)">${numberFormat(colTotal)}</td>`;
+  });
+  html += `<td class="num" style="text-align:right;color:var(--error)">${numberFormat(data.length)}</td></tr>`;
+  html += `</tbody></table></div></div>`;
+
+  // Detail Table
+  html += `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">&#9776; รายละเอียด (${numberFormat(data.length)} records)</div>
+      <span class="dash-section-badge" style="background:var(--surface2);color:var(--text-muted);">Raw Data</span>
+    </div>
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead><tr>
+          <th>#</th>
+          <th>Donor No.</th>
+          <th>ชนิดเลือด</th>
+          <th>หมู่เลือด</th>
+          <th>Rh</th>
+          <th>สถานะถุง</th>
+          <th>สถานะคลัง</th>
+          <th>วันผลิต</th>
+          <th>วันหมดอายุ</th>
+          <th>วันพร้อมใช้</th>
+          <th>วันเข้าคลัง</th>
+          <th>ผู้บริจาค</th>
+        </tr></thead><tbody>`;
+
+  data.forEach((r, i) => {
+    html += `<tr>
+      <td class="num">${i + 1}</td>
+      <td>${escHtml(r.blb_bag_donor_number || '-')}</td>
+      <td>${escHtml(r.blb_blood_items_nm || '-')}</td>
+      <td>${bloodGroupTag(r.blood_group_name || '-')}</td>
+      <td>${escHtml(r.blb_blood_rh_name || '-')}</td>
+      <td>${escHtml(r.blb_bag_status_name || '-')}</td>
+      <td>${escHtml(r.blb_stock_status_name || '-')}</td>
+      <td>${escHtml(r.blb_bag_mfg_date || '-')}</td>
+      <td>${escHtml(r.blb_bag_expire_date || '-')}</td>
+      <td>${escHtml(r.blb_bag_available_date || '-')}</td>
+      <td>${escHtml(r.blb_stock_date || '-')}</td>
+      <td>${escHtml(r.dname || '-')}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+
+  content.innerHTML = html;
+
+  // Draw charts after DOM update
+  requestAnimationFrame(() => {
+    drawStackedHorizontalChart('chartStackedType', window._chartStackedData);
+    drawDonutChart('chartBloodGroup', window._chartGroupData);
+  });
+}
+
+// == Stacked Horizontal Bar Chart (ชนิดเลือด แยกหมู่เลือด) ==
+function drawStackedHorizontalChart(canvasId, chartData) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !chartData) return;
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width;
+  const H = chartData.rows.length * 52 + 60;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const { rows, groups, colors, bloodTypes } = chartData;
+  if (!rows.length) return;
+
+  const maxVal = Math.max(...rows.map(r => r.total), 1);
+  const padTop = 10, padBottom = 10, padLeft = 70, padRight = 60;
+  const chartW = W - padLeft - padRight;
+  const rowCount = rows.length;
+  const barH = 30;
+  const gap = 18;
+
+  // Type color map
+  const typeColorMap = {};
+  if (bloodTypes) bloodTypes.forEach(bt => { typeColorMap[bt.nm] = bt.color; });
+
+  // Grid lines (vertical)
+  const gridSteps = 5;
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= gridSteps; i++) {
+    const x = padLeft + (chartW / gridSteps) * i;
+    ctx.beginPath();
+    ctx.setLineDash([3, 3]);
+    ctx.moveTo(x, padTop);
+    ctx.lineTo(x, padTop + rowCount * (barH + gap));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  rows.forEach((row, ri) => {
+    const y = padTop + ri * (barH + gap);
+
+    // Type label (left)
+    const tColor = typeColorMap[row.nm] || '#334155';
+    ctx.fillStyle = tColor;
+    ctx.font = 'bold 14px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(row.nm, padLeft - 10, y + barH / 2);
+
+    // Background track
+    ctx.fillStyle = '#f1f5f9';
+    roundRect(ctx, padLeft, y, chartW, barH, 6);
+    ctx.fill();
+
+    // Stacked segments
+    let offsetX = padLeft;
+    groups.forEach((g, gi) => {
+      const val = row.groups[gi];
+      if (val <= 0) return;
+      const segW = (val / maxVal) * chartW;
+      const color = colors[g] || '#94a3b8';
+
+      ctx.fillStyle = color;
+      // First segment: round left; Last segment: round right
+      const isFirst = offsetX === padLeft;
+      const isLast = (offsetX + segW) >= (padLeft + (row.total / maxVal) * chartW - 1);
+      const r = 6;
+
+      ctx.beginPath();
+      if (isFirst && isLast) {
+        roundRect(ctx, offsetX, y, segW, barH, r);
+      } else if (isFirst) {
+        roundRectSide(ctx, offsetX, y, segW, barH, r, 'left');
+      } else if (isLast) {
+        roundRectSide(ctx, offsetX, y, segW, barH, r, 'right');
+      } else {
+        ctx.rect(offsetX, y, segW, barH);
+      }
+      ctx.fill();
+
+      // Segment label (if wide enough)
+      if (segW > 24) {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(val, offsetX + segW / 2, y + barH / 2);
+      }
+
+      offsetX += segW;
+    });
+
+    // Total label (right)
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(row.total, offsetX + 8, y + barH / 2);
+  });
+}
+
+// Helper: rounded rect
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Helper: rounded rect one side only
+function roundRectSide(ctx, x, y, w, h, r, side) {
+  ctx.beginPath();
+  if (side === 'left') {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+  } else {
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+// == Donut Chart (หมู่เลือด) ==
+function drawDonutChart(canvasId, chartData) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !chartData) return;
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const container = canvas.parentElement.getBoundingClientRect();
+  const W = Math.min(container.width, 400);
+  const legendH = (chartData.labels.length || 1) * 28 + 20;
+  const H = Math.max(W + legendH + 40, 380);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const { labels, values, total } = chartData;
+  if (!labels.length) return;
+
+  const donutColors = ['#f59e0b','#3b82f6','#ec4899','#22c55e','#8b5cf6','#06b6d4','#f97316','#64748b','#be185d','#0d9488'];
+  const cx = W / 2;
+  const lgH = labels.length * 28 + 10;
+  const availH = H - lgH - 20;
+  const radius = Math.min(cx - 20, availH / 2 - 10, 120);
+  const cy = radius + 20;
+  const innerRadius = radius * 0.55;
+  const sum = values.reduce((s, v) => s + v, 0) || 1;
+
+  let startAngle = -Math.PI / 2;
+
+  // Draw slices
+  labels.forEach((label, i) => {
+    const val = values[i];
+    const sliceAngle = (val / sum) * Math.PI * 2;
+    const endAngle = startAngle + sliceAngle;
+    const color = donutColors[i % donutColors.length];
+
+    // Slice
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startAngle, endAngle);
+    ctx.arc(cx, cy, innerRadius, endAngle, startAngle, true);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // White border between slices
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Percentage label on slice (if big enough)
+    if (sliceAngle > 0.3) {
+      const midAngle = startAngle + sliceAngle / 2;
+      const labelR = (radius + innerRadius) / 2;
+      const lx = cx + Math.cos(midAngle) * labelR;
+      const ly = cy + Math.sin(midAngle) * labelR;
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 13px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(val, lx, ly);
+    }
+
+    startAngle = endAngle;
+  });
+
+  // Center text
+  ctx.fillStyle = '#1a2332';
+  ctx.font = 'bold 28px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(total, cx, cy - 6);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 11px "Sarabun", sans-serif';
+  ctx.fillText('TOTAL', cx, cy + 16);
+
+  // Legend below donut
+  const legendTop = cy + radius + 24;
+  const legendStartX = 30;
+  labels.forEach((label, i) => {
+    const val = values[i];
+    const pct = ((val / sum) * 100).toFixed(1);
+    const color = donutColors[i % donutColors.length];
+    const ly = legendTop + i * 28;
+
+    // Color dot
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(legendStartX + 8, ly + 8, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 13px "Sarabun", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, legendStartX + 22, ly + 8);
+
+    // Count + percent (right aligned)
+    ctx.fillStyle = color;
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${val}  (${pct}%)`, W - 20, ly + 8);
+  });
+}
+
+// == Auto Refresh ==
+function toggleAutoRefresh() {
+  stopAutoRefresh();
+  if (document.getElementById('autoRefreshCheck').checked && sessionConnected) {
+    const sec = parseInt(document.getElementById('autoRefreshInterval').value) || 60;
+    autoRefreshTimer = setInterval(() => loadDashboard(), sec * 1000);
+    showToast('info', `Auto refresh every ${sec}s`);
+  }
+}
+function stopAutoRefresh() {
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+}
+
+// == Init ==
+window.addEventListener('DOMContentLoaded', () => {
+  // Check URL param
+  const urlSession = getSessionFromUrl();
+  if (urlSession) {
+    document.getElementById('sessionId').value = urlSession;
+    removeSessionFromUrl();
+    handleConnect();
+    return;
+  }
+  // Check cookie
+  const cookieSession = getSessionCookie();
+  if (cookieSession) {
+    document.getElementById('sessionId').value = cookieSession;
+    handleConnect();
+  }
+});
+</script>
+</body>
+</html>
