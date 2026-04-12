@@ -33,13 +33,13 @@ if not exist "node_modules\" (
 
 echo.
 echo  Starting server...
-echo  Dashboard : http://localhost:3312
+echo  Dashboard : http://localhost:7712
 echo  Press Ctrl+C to stop
 echo  ==========================================
 echo.
 
 :: Open browser
-start http://localhost:3312
+start http://localhost:7712
 
 node server.js
 
