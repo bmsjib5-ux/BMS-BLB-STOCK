@@ -39,7 +39,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    font-size: 14px;
+    font-size: 18px;
     line-height: 1.6;
   }
 
@@ -51,7 +51,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    height: 56px;
+    height: 64px;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -64,17 +64,17 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; color: #fff;
   }
-  .header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; color: #fff; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; color: #fff; }
   .header h1 span { color: #f87171; }
   .header-subtitle {
-    font-size: 11px; color: rgba(255,255,255,0.5);
-    padding: 2px 8px; background: rgba(255,255,255,0.08); border-radius: 4px;
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    padding: 3px 10px; background: rgba(255,255,255,0.08); border-radius: 4px;
   }
   .header-spacer { flex: 1; }
   .conn-badge {
     display: flex; align-items: center; gap: 6px;
     padding: 4px 12px; border-radius: 20px;
-    font-size: 11px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
   }
   .conn-badge.disconnected {
     background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15);
@@ -88,7 +88,7 @@
     padding: 6px 16px;
     background: linear-gradient(135deg, #dc2626, #f87171);
     border: none; border-radius: 6px;
-    color: #fff; font-size: 12px; font-weight: 700;
+    color: #fff; font-size: 15px; font-weight: 700;
     cursor: pointer; transition: all 0.15s;
   }
   .refresh-btn:hover { filter: brightness(1.15); }
@@ -113,7 +113,7 @@
     padding: 14px;
   }
   .section-title {
-    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    font-size: 14px; font-weight: 700; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.5px;
     margin-bottom: 10px;
   }
@@ -207,19 +207,19 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.1);
   }
   .bt-card .bt-name {
-    font-size: 16px;
+    font-size: 22px;
     font-weight: 700;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
   }
   .bt-card .bt-count {
-    font-size: 32px;
+    font-size: 42px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
     line-height: 1.1;
   }
   .bt-card .bt-label {
-    font-size: 10px;
+    font-size: 14px;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -247,11 +247,11 @@
     border-bottom: 1px solid var(--border);
   }
   .dash-section-title {
-    font-size: 14px; font-weight: 700;
+    font-size: 18px; font-weight: 700;
     display: flex; align-items: center; gap: 8px;
   }
   .dash-section-badge {
-    font-size: 11px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
     padding: 2px 8px; border-radius: 10px;
     font-family: 'JetBrains Mono', monospace;
   }
@@ -303,25 +303,25 @@
   .detail-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: 16px;
   }
   .detail-table th {
     position: sticky; top: 0;
     background: var(--surface2);
     border-bottom: 2px solid var(--border);
-    padding: 10px 14px;
+    padding: 12px 16px;
     text-align: left;
-    font-size: 11px; font-weight: 700;
+    font-size: 15px; font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.3px;
     white-space: nowrap;
   }
   .detail-table td {
-    padding: 8px 14px;
+    padding: 10px 16px;
     border-bottom: 1px solid var(--border);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 15px;
   }
   .detail-table tr:hover td { background: var(--primary-glow); }
   .detail-table .num { text-align: right; font-weight: 700; }
@@ -329,9 +329,9 @@
   /* Tags */
   .tag {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
   }
@@ -354,7 +354,7 @@
     gap: 12px;
   }
   .loading-overlay .spinner { font-size: 28px; }
-  .loading-text { font-size: 13px; font-weight: 600; }
+  .loading-text { font-size: 18px; font-weight: 600; }
 
   /* Empty state */
   .empty-state {
@@ -364,9 +364,9 @@
     color: var(--text-muted);
     gap: 8px;
   }
-  .empty-icon { font-size: 40px; opacity: 0.3; }
-  .empty-text { font-size: 14px; font-weight: 600; }
-  .empty-sub { font-size: 12px; }
+  .empty-icon { font-size: 56px; opacity: 0.3; }
+  .empty-text { font-size: 22px; font-weight: 600; }
+  .empty-sub { font-size: 16px; }
 
   /* Toast */
   .toast-wrap {
@@ -409,7 +409,7 @@
   }
   .conn-tab {
     flex: 1; padding: 6px 8px; text-align: center;
-    font-size: 11px; font-weight: 700; cursor: pointer;
+    font-size: 14px; font-weight: 700; cursor: pointer;
     background: var(--bg); color: var(--text-muted);
     border: none; transition: all 0.15s;
     letter-spacing: 0.3px;
@@ -1308,7 +1308,7 @@ function renderDashboard(data) {
   stackedRows.sort((a, b) => b.total - a.total);
 
   // Calculate chart height based on rows
-  const stackedChartH = Math.max(320, stackedRows.length * 52 + 80);
+  const stackedChartH = Math.max(380, stackedRows.length * 60 + 80);
 
   // === Charts: Stacked horizontal + Blood Group vertical ===
   html += `<div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:20px;">`;
@@ -1323,7 +1323,7 @@ function renderDashboard(data) {
       <div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px;">
         ${BLOOD_GROUPS_ORDER.map(g => `<div style="display:flex;align-items:center;gap:4px;">
           <span style="width:14px;height:14px;border-radius:3px;background:${BG_COLORS[g]};display:inline-block;"></span>
-          <span style="font-size:12px;font-weight:700;color:#475569;">Group ${g}</span>
+          <span style="font-size:16px;font-weight:700;color:#475569;">Group ${g}</span>
         </div>`).join('')}
       </div>
       <canvas id="chartStackedType" height="${stackedChartH}"></canvas>
@@ -1442,7 +1442,7 @@ function drawStackedHorizontalChart(canvasId, chartData) {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
   const W = rect.width;
-  const H = chartData.rows.length * 52 + 60;
+  const H = chartData.rows.length * 60 + 60;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -1453,11 +1453,11 @@ function drawStackedHorizontalChart(canvasId, chartData) {
   if (!rows.length) return;
 
   const maxVal = Math.max(...rows.map(r => r.total), 1);
-  const padTop = 10, padBottom = 10, padLeft = 70, padRight = 60;
+  const padTop = 10, padBottom = 10, padLeft = 80, padRight = 65;
   const chartW = W - padLeft - padRight;
   const rowCount = rows.length;
-  const barH = 30;
-  const gap = 18;
+  const barH = 38;
+  const gap = 20;
 
   // Type color map
   const typeColorMap = {};
@@ -1483,7 +1483,7 @@ function drawStackedHorizontalChart(canvasId, chartData) {
     // Type label (left)
     const tColor = typeColorMap[row.nm] || '#334155';
     ctx.fillStyle = tColor;
-    ctx.font = 'bold 14px "JetBrains Mono", monospace';
+    ctx.font = 'bold 18px "JetBrains Mono", monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText(row.nm, padLeft - 10, y + barH / 2);
@@ -1522,7 +1522,7 @@ function drawStackedHorizontalChart(canvasId, chartData) {
       // Segment label (if wide enough)
       if (segW > 24) {
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.font = 'bold 15px "JetBrains Mono", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(val, offsetX + segW / 2, y + barH / 2);
@@ -1533,7 +1533,7 @@ function drawStackedHorizontalChart(canvasId, chartData) {
 
     // Total label (right)
     ctx.fillStyle = '#334155';
-    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.font = 'bold 17px "JetBrains Mono", monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(row.total, offsetX + 8, y + barH / 2);
@@ -1587,7 +1587,7 @@ function drawDonutChart(canvasId, chartData) {
   const dpr = window.devicePixelRatio || 1;
   const container = canvas.parentElement.getBoundingClientRect();
   const W = Math.min(container.width, 400);
-  const legendH = (chartData.labels.length || 1) * 28 + 20;
+  const legendH = (chartData.labels.length || 1) * 34 + 20;
   const H = Math.max(W + legendH + 40, 380);
   canvas.width = W * dpr;
   canvas.height = H * dpr;
@@ -1600,7 +1600,7 @@ function drawDonutChart(canvasId, chartData) {
 
   const donutColors = ['#f59e0b','#3b82f6','#ec4899','#22c55e','#8b5cf6','#06b6d4','#f97316','#64748b','#be185d','#0d9488'];
   const cx = W / 2;
-  const lgH = labels.length * 28 + 10;
+  const lgH = labels.length * 34 + 10;
   const availH = H - lgH - 20;
   const radius = Math.min(cx - 20, availH / 2 - 10, 120);
   const cy = radius + 20;
@@ -1640,7 +1640,7 @@ function drawDonutChart(canvasId, chartData) {
       const lx = cx + Math.cos(midAngle) * labelR;
       const ly = cy + Math.sin(midAngle) * labelR;
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 13px "JetBrains Mono", monospace';
+      ctx.font = 'bold 16px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(val, lx, ly);
@@ -1651,13 +1651,13 @@ function drawDonutChart(canvasId, chartData) {
 
   // Center text
   ctx.fillStyle = '#1a2332';
-  ctx.font = 'bold 28px "JetBrains Mono", monospace';
+  ctx.font = 'bold 36px "JetBrains Mono", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(total, cx, cy - 6);
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '600 11px "Sarabun", sans-serif';
-  ctx.fillText('TOTAL', cx, cy + 16);
+  ctx.font = '600 15px "Sarabun", sans-serif';
+  ctx.fillText('TOTAL', cx, cy + 20);
 
   // Legend below donut
   const legendTop = cy + radius + 24;
@@ -1666,7 +1666,7 @@ function drawDonutChart(canvasId, chartData) {
     const val = values[i];
     const pct = ((val / sum) * 100).toFixed(1);
     const color = donutColors[i % donutColors.length];
-    const ly = legendTop + i * 28;
+    const ly = legendTop + i * 34;
 
     // Color dot
     ctx.fillStyle = color;
@@ -1676,14 +1676,14 @@ function drawDonutChart(canvasId, chartData) {
 
     // Label
     ctx.fillStyle = '#334155';
-    ctx.font = 'bold 13px "Sarabun", sans-serif';
+    ctx.font = 'bold 16px "Sarabun", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, legendStartX + 22, ly + 8);
 
     // Count + percent (right aligned)
     ctx.fillStyle = color;
-    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.font = 'bold 16px "JetBrains Mono", monospace';
     ctx.textAlign = 'right';
     ctx.fillText(`${val}  (${pct}%)`, W - 20, ly + 8);
   });
