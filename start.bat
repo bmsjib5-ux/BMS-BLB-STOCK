@@ -38,6 +38,9 @@ echo  Press Ctrl+C to stop
 echo  ==========================================
 echo.
 
+:: Open browser
+start http://localhost:3000
+
 node server.js
 
 pause
