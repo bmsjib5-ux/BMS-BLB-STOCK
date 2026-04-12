@@ -402,6 +402,35 @@
     background: var(--bg); color: var(--text);
   }
 
+  /* Connection Mode Tabs */
+  .conn-tabs {
+    display: flex; gap: 0; margin-bottom: 12px;
+    border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  }
+  .conn-tab {
+    flex: 1; padding: 6px 8px; text-align: center;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    background: var(--bg); color: var(--text-muted);
+    border: none; transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .conn-tab:not(:last-child) { border-right: 1px solid var(--border); }
+  .conn-tab.active { background: var(--primary); color: #fff; }
+  .conn-tab:hover:not(.active) { background: var(--surface); }
+  .conn-panel { display: none; }
+  .conn-panel.active { display: block; }
+
+  /* PG specific */
+  .pg-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .pg-row .field-group { flex: 1; margin-bottom: 0; }
+  .pg-test-result {
+    margin-top: 6px; padding: 6px 10px; border-radius: 6px;
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    display: none;
+  }
+  .pg-test-result.ok { display: block; background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+  .pg-test-result.err { display: block; background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+
   /* Responsive */
   @media (max-width: 1100px) {
     .blood-type-cards { grid-template-columns: repeat(4, 1fr); }
@@ -438,17 +467,63 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-section">
-      <div class="section-title">BMS Session</div>
-      <div class="field-group">
-        <div class="field-label">Session ID (GUID)</div>
-        <input type="text" class="field-input" id="sessionId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <div class="section-title">Connection</div>
+      <div class="conn-tabs">
+        <button class="conn-tab active" id="tabBms" onclick="switchConnMode('bms')">BMS Session</button>
+        <button class="conn-tab" id="tabPg" onclick="switchConnMode('pg')">PostgreSQL</button>
       </div>
-      <div class="status-row">
-        <span class="status-dot" id="sessionDot"></span>
-        <span id="sessionStatusTxt" style="color:var(--text-muted)">No Session ID</span>
+
+      <!-- BMS Session Panel -->
+      <div class="conn-panel active" id="panelBms">
+        <div class="field-group">
+          <div class="field-label">Session ID (GUID)</div>
+          <input type="text" class="field-input" id="sessionId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        </div>
+        <div class="status-row">
+          <span class="status-dot" id="sessionDot"></span>
+          <span id="sessionStatusTxt" style="color:var(--text-muted)">No Session ID</span>
+        </div>
+        <div id="sessionUserInfo" style="display:none; margin-top:6px; font-size:12px;"></div>
+        <button class="btn" id="connectBtn" style="margin-top:10px" onclick="handleConnect()">Connect Session</button>
       </div>
-      <div id="sessionUserInfo" style="display:none; margin-top:6px; font-size:12px;"></div>
-      <button class="btn" id="connectBtn" style="margin-top:10px" onclick="handleConnect()">Connect Session</button>
+
+      <!-- PostgreSQL Panel -->
+      <div class="conn-panel" id="panelPg">
+        <div class="pg-row">
+          <div class="field-group" style="flex:2">
+            <div class="field-label">Host</div>
+            <input type="text" class="field-input" id="pgHost" placeholder="localhost">
+          </div>
+          <div class="field-group" style="flex:1">
+            <div class="field-label">Port</div>
+            <input type="text" class="field-input" id="pgPort" placeholder="5432" value="5432">
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Database</div>
+          <input type="text" class="field-input" id="pgDatabase" placeholder="hosxp_db">
+        </div>
+        <div class="pg-row">
+          <div class="field-group">
+            <div class="field-label">Username</div>
+            <input type="text" class="field-input" id="pgUser" placeholder="postgres">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Password</div>
+            <input type="password" class="field-input" id="pgPassword" placeholder="********">
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">API Endpoint (REST proxy)</div>
+          <input type="text" class="field-input" id="pgApiUrl" placeholder="http://localhost:3000/api/sql">
+        </div>
+        <div class="status-row">
+          <span class="status-dot" id="pgDot"></span>
+          <span id="pgStatusTxt" style="color:var(--text-muted)">Not Connected</span>
+        </div>
+        <button class="btn" id="pgConnectBtn" style="margin-top:10px" onclick="handlePgConnect()">Connect PostgreSQL</button>
+        <div class="pg-test-result" id="pgTestResult"></div>
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -519,6 +594,9 @@ let connectionConfig = null;
 let userInfo = null;
 let autoRefreshTimer = null;
 let dashboardData = [];
+let connMode = 'bms'; // 'bms' | 'pg'
+let pgConnected = false;
+let pgConfig = null;
 
 // == Color palettes ==
 const TYPE_COLORS = ['#dc2626','#2563eb','#7c3aed','#059669','#ea580c','#db2777','#0891b2','#4f46e5','#ca8a04','#64748b','#be185d','#0d9488'];
@@ -714,9 +792,169 @@ function disconnectSession() {
     </div>`;
 }
 
-// == SQL Execution ==
+// == Connection Mode ==
+function switchConnMode(mode) {
+  connMode = mode;
+  document.getElementById('tabBms').className = `conn-tab ${mode === 'bms' ? 'active' : ''}`;
+  document.getElementById('tabPg').className = `conn-tab ${mode === 'pg' ? 'active' : ''}`;
+  document.getElementById('panelBms').className = `conn-panel ${mode === 'bms' ? 'active' : ''}`;
+  document.getElementById('panelPg').className = `conn-panel ${mode === 'pg' ? 'active' : ''}`;
+}
+
+// == PostgreSQL Connection ==
+function savePgConfig() {
+  const cfg = {
+    host: document.getElementById('pgHost').value.trim(),
+    port: document.getElementById('pgPort').value.trim() || '5432',
+    database: document.getElementById('pgDatabase').value.trim(),
+    user: document.getElementById('pgUser').value.trim(),
+    password: document.getElementById('pgPassword').value,
+    apiUrl: document.getElementById('pgApiUrl').value.trim(),
+  };
+  try { localStorage.setItem('blb-pg-config', JSON.stringify({ ...cfg, password: btoa(cfg.password) })); } catch(e) {}
+  return cfg;
+}
+
+function loadPgConfig() {
+  try {
+    const raw = localStorage.getItem('blb-pg-config');
+    if (!raw) return null;
+    const cfg = JSON.parse(raw);
+    cfg.password = atob(cfg.password || '');
+    return cfg;
+  } catch(e) { return null; }
+}
+
+function fillPgFields(cfg) {
+  if (!cfg) return;
+  document.getElementById('pgHost').value = cfg.host || '';
+  document.getElementById('pgPort').value = cfg.port || '5432';
+  document.getElementById('pgDatabase').value = cfg.database || '';
+  document.getElementById('pgUser').value = cfg.user || '';
+  document.getElementById('pgPassword').value = cfg.password || '';
+  document.getElementById('pgApiUrl').value = cfg.apiUrl || '';
+}
+
+async function handlePgConnect() {
+  if (pgConnected) { disconnectPg(); return; }
+
+  const cfg = savePgConfig();
+  if (!cfg.apiUrl) {
+    showToast('err', 'กรุณาระบุ API Endpoint');
+    return;
+  }
+
+  const btn = document.getElementById('pgConnectBtn');
+  const resultDiv = document.getElementById('pgTestResult');
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+  resultDiv.className = 'pg-test-result';
+
+  // Test connection via API
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 10000);
+    const testBody = {
+      host: cfg.host,
+      port: parseInt(cfg.port) || 5432,
+      database: cfg.database,
+      user: cfg.user,
+      password: cfg.password,
+      sql: 'SELECT 1 AS ok'
+    };
+
+    const res = await fetch(cfg.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testBody),
+      signal: controller.signal,
+    });
+    clearTimeout(tid);
+    const json = await res.json();
+
+    btn.disabled = false;
+
+    if (res.ok && (json.data || json.rows || json.result)) {
+      pgConnected = true;
+      pgConfig = cfg;
+
+      // Disconnect BMS if connected
+      if (sessionConnected) disconnectSession();
+
+      btn.textContent = 'Disconnect';
+      btn.classList.add('connected');
+      document.getElementById('refreshBtn').disabled = false;
+
+      document.getElementById('pgDot').className = 'status-dot ok';
+      document.getElementById('pgStatusTxt').textContent = `Connected: ${cfg.database}@${cfg.host}`;
+      document.getElementById('pgStatusTxt').style.color = 'var(--success)';
+
+      const badge = document.getElementById('connBadge');
+      badge.className = 'conn-badge connected';
+      document.getElementById('connText').textContent = `PG: ${cfg.database}`;
+
+      resultDiv.className = 'pg-test-result ok';
+      resultDiv.textContent = `Connected to ${cfg.database}@${cfg.host}:${cfg.port}`;
+
+      showToast('ok', `PostgreSQL Connected: ${cfg.database}@${cfg.host}`);
+      connMode = 'pg';
+      loadDashboard();
+    } else {
+      resultDiv.className = 'pg-test-result err';
+      resultDiv.textContent = json.error || json.message || JSON.stringify(json).substring(0, 200);
+      btn.textContent = 'Connect PostgreSQL';
+      showToast('err', 'Connection failed');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Connect PostgreSQL';
+    resultDiv.className = 'pg-test-result err';
+    resultDiv.textContent = e.name === 'AbortError' ? 'Connection timeout (10s)' : e.message;
+    showToast('err', e.name === 'AbortError' ? 'Connection timeout' : e.message);
+  }
+}
+
+function disconnectPg() {
+  stopAutoRefresh();
+  pgConnected = false;
+  pgConfig = null;
+
+  document.getElementById('pgConnectBtn').textContent = 'Connect PostgreSQL';
+  document.getElementById('pgConnectBtn').classList.remove('connected');
+  document.getElementById('refreshBtn').disabled = true;
+
+  document.getElementById('pgDot').className = 'status-dot';
+  document.getElementById('pgStatusTxt').textContent = 'Not Connected';
+  document.getElementById('pgStatusTxt').style.color = 'var(--text-muted)';
+  document.getElementById('pgTestResult').className = 'pg-test-result';
+
+  const badge = document.getElementById('connBadge');
+  badge.className = 'conn-badge disconnected';
+  document.getElementById('connText').textContent = 'Not Connected';
+
+  ['sideTotal','sideTypes','sideGroups','sideStatuses'].forEach(id => {
+    document.getElementById(id).textContent = '-';
+  });
+  document.getElementById('lastRefreshTime').textContent = '-';
+
+  document.getElementById('dashContent').innerHTML = `
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">&#129656;</div>
+      <div class="empty-text">Blood Stock Dashboard</div>
+      <div class="empty-sub">Connect to load blood inventory data</div>
+    </div>`;
+}
+
+// == SQL Execution (supports both BMS & PG) ==
 async function executeQuery(sql) {
+  if (connMode === 'pg' && pgConnected && pgConfig) {
+    return executePgQuery(sql);
+  }
   if (!sessionConnected || !connectionConfig) return null;
+  return executeBmsQuery(sql);
+}
+
+async function executeBmsQuery(sql) {
   const fullUrl = `${connectionConfig.apiUrl}/api/sql?sql=${encodeURIComponent(minifySql(sql))}&app=${encodeURIComponent(APP_NAME)}`;
   try {
     const controller = new AbortController();
@@ -743,9 +981,43 @@ async function executeQuery(sql) {
   }
 }
 
+async function executePgQuery(sql) {
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+    const body = {
+      host: pgConfig.host,
+      port: parseInt(pgConfig.port) || 5432,
+      database: pgConfig.database,
+      user: pgConfig.user,
+      password: pgConfig.password,
+      sql: minifySql(sql)
+    };
+
+    const res = await fetch(pgConfig.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(tid);
+    const json = await res.json();
+
+    if (res.ok) {
+      return json.data || json.rows || json.result || [];
+    } else {
+      showToast('err', `PG Error: ${json.error || json.message || 'Unknown'}`);
+      return null;
+    }
+  } catch (e) {
+    showToast('err', e.name === 'AbortError' ? 'Query Timeout' : `PG Error: ${e.message}`);
+    return null;
+  }
+}
+
 // == Dashboard ==
 async function loadDashboard() {
-  if (!sessionConnected) return;
+  if (!sessionConnected && !pgConnected) return;
 
   const content = document.getElementById('dashContent');
   const btn = document.getElementById('refreshBtn');
@@ -1346,7 +1618,7 @@ function drawDonutChart(canvasId, chartData) {
 // == Auto Refresh ==
 function toggleAutoRefresh() {
   stopAutoRefresh();
-  if (document.getElementById('autoRefreshCheck').checked && sessionConnected) {
+  if (document.getElementById('autoRefreshCheck').checked && (sessionConnected || pgConnected)) {
     const sec = parseInt(document.getElementById('autoRefreshInterval').value) || 60;
     autoRefreshTimer = setInterval(() => loadDashboard(), sec * 1000);
     showToast('info', `Auto refresh every ${sec}s`);
@@ -1358,11 +1630,16 @@ function stopAutoRefresh() {
 
 // == Init ==
 window.addEventListener('DOMContentLoaded', () => {
+  // Restore PG config from localStorage
+  const savedPg = loadPgConfig();
+  if (savedPg) fillPgFields(savedPg);
+
   // Check URL param
   const urlSession = getSessionFromUrl();
   if (urlSession) {
     document.getElementById('sessionId').value = urlSession;
     removeSessionFromUrl();
+    switchConnMode('bms');
     handleConnect();
     return;
   }
@@ -1370,6 +1647,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const cookieSession = getSessionCookie();
   if (cookieSession) {
     document.getElementById('sessionId').value = cookieSession;
+    switchConnMode('bms');
     handleConnect();
   }
 });
