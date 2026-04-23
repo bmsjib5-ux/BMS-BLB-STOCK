@@ -1214,7 +1214,6 @@ async function loadDashboard() {
       r.blb_request_sample_no,
       r.hn,
       CONCAT(bg.name,' ',br.blb_blood_rh_name) AS bg,
-      pt.blood_grp AS patient_bg,
       CASE WHEN (r.vn IS NOT NULL) AND (r.vn <> '') THEN r.vn ELSE r.an END AS van,
       r.blb_request_order_date,
       r.blb_request_order_time,
@@ -1431,12 +1430,6 @@ function renderDashboard(data) {
       else if (kind === 'received') cardClass = 'received';
       else if (isLocked) cardClass = 'locked';
 
-      // Patient's own blood group (from patient table, e.g., "A", "B+", "O-")
-      const patientBg = (r.patient_bg || '').trim();
-      const requestBg = (r.bg || '').trim();
-      const normalize = s => (s || '').replace(/\s+/g, '').replace(/rh/i, '').toUpperCase();
-      const bgMismatch = patientBg && requestBg && normalize(patientBg) !== normalize(requestBg);
-
       html += `<div class="pcard ${cardClass}">
         <div class="pcard-head">
           <div>
@@ -1444,8 +1437,8 @@ function renderDashboard(data) {
             <div class="pcard-hn">HN: ${escHtml(r.hn || '-')}  ${r.van ? '&middot; ' + escHtml(r.van) : ''}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:2px">ขอใช้</div>
-            ${bloodGroupTag(requestBg || '-')}
+            <div style="font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:2px">&#129656; หมู่เลือด</div>
+            ${bloodGroupTag(r.bg || '-')}
           </div>
         </div>
         <div class="pcard-badges">
@@ -1453,13 +1446,6 @@ function renderDashboard(data) {
           ${r.blb_request_type_name ? `<span class="status-tag" style="background:#dbeafe;color:#1e40af">${escHtml(r.blb_request_type_name)}</span>` : ''}
           ${isLocked ? '<span class="status-tag" style="background:#fee2e2;color:#991b1b">&#128274; LOCKED</span>' : ''}
           ${r.tfnl === 2 ? '<span class="status-tag" style="background:#fef3c7;color:#92400e">&#128176; FN LOCK</span>' : ''}
-        </div>
-        <div class="pcard-row">
-          <span class="pcard-row-label">&#129656; หมู่เลือดคนไข้</span>
-          <span class="pcard-row-value" style="display:flex;align-items:center;gap:6px">
-            ${patientBg ? bloodGroupTag(patientBg) : '<span style="color:var(--text-muted);font-size:12px">ไม่ระบุ</span>'}
-            ${bgMismatch ? '<span class="status-tag" style="background:#fef3c7;color:#92400e" title="หมู่เลือดคนไข้ไม่ตรงกับที่ขอใช้">&#9888; ไม่ตรง</span>' : ''}
-          </span>
         </div>
         <div class="pcard-row">
           <span class="pcard-row-label">เลขที่ใบขอ</span>
@@ -1507,8 +1493,7 @@ function renderDashboard(data) {
           <th>HN</th>
           <th>ชื่อ-สกุล</th>
           <th>VN/AN</th>
-          <th>หมู่เลือดคนไข้</th>
-          <th>หมู่เลือดที่ขอ</th>
+          <th>หมู่เลือด</th>
           <th>วันสั่ง</th>
           <th>เวลาสั่ง</th>
           <th>สถานะ</th>
@@ -1530,7 +1515,6 @@ function renderDashboard(data) {
         <td>${escHtml(r.hn || '-')}</td>
         <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
         <td>${escHtml(r.van || '-')}</td>
-        <td>${r.patient_bg ? bloodGroupTag(r.patient_bg) : '-'}</td>
         <td>${bloodGroupTag(r.bg || '-')}</td>
         <td>${fmtDate(r.blb_request_order_date)}</td>
         <td>${fmtTime(r.blb_request_order_time)}</td>
