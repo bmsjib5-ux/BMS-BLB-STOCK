@@ -702,6 +702,13 @@ function numberFormat(n) {
   return Number(n).toLocaleString('th-TH');
 }
 
+function fmtDate(val) {
+  if (!val) return '-';
+  const s = String(val);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : s;
+}
+
 function bloodGroupTag(group) {
   const g = (group || '').toUpperCase().trim();
   if (g.includes('A') && g.includes('B')) return `<span class="tag tag-ab">${escHtml(group)}</span>`;
@@ -1437,10 +1444,10 @@ function renderDashboard(data) {
       <td>${escHtml(r.blb_blood_rh_name || '-')}</td>
       <td>${escHtml(r.blb_bag_status_name || '-')}</td>
       <td>${escHtml(r.blb_stock_status_name || '-')}</td>
-      <td>${escHtml(r.blb_bag_mfg_date || '-')}</td>
-      <td>${escHtml(r.blb_bag_expire_date || '-')}</td>
-      <td>${escHtml(r.blb_bag_available_date || '-')}</td>
-      <td>${escHtml(r.blb_stock_date || '-')}</td>
+      <td>${fmtDate(r.blb_bag_mfg_date)}</td>
+      <td>${fmtDate(r.blb_bag_expire_date)}</td>
+      <td>${fmtDate(r.blb_bag_available_date)}</td>
+      <td>${fmtDate(r.blb_stock_date)}</td>
       <td>${escHtml(r.dname || '-')}</td>
     </tr>`;
   });

@@ -663,6 +663,22 @@ function nowStr() {
 function dateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+function fmtDate(val) {
+  if (!val) return '-';
+  const s = String(val);
+  // Extract YYYY-MM-DD from ISO or any string that starts with it
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : s;
+}
+function fmtTime(val) {
+  if (!val) return '-';
+  const s = String(val);
+  // Extract HH:MM:SS from ISO datetime or time string
+  const iso = s.match(/T(\d{2}:\d{2}:\d{2})/);
+  if (iso) return iso[1];
+  const t = s.match(/^(\d{2}:\d{2}(?::\d{2})?)/);
+  return t ? t[1] : s;
+}
 
 function bloodGroupTag(group) {
   const g = (group || '').toUpperCase().trim();
@@ -1252,14 +1268,14 @@ function renderDashboard(data) {
       <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
       <td>${escHtml(r.van || '-')}</td>
       <td>${bloodGroupTag(r.bg || '-')}</td>
-      <td>${escHtml(r.blb_request_order_date || '-')}</td>
-      <td>${escHtml(r.blb_request_order_time || '-')}</td>
+      <td>${fmtDate(r.blb_request_order_date)}</td>
+      <td>${fmtTime(r.blb_request_order_time)}</td>
       <td>${statusTag(r.blb_request_status_name)}</td>
       <td>${escHtml(r.blb_request_type_name || '-')}</td>
       <td style="font-family:'Sarabun',sans-serif">${escHtml(r.department || '-')}</td>
       <td style="font-family:'Sarabun',sans-serif">${escHtml(r.spclty || '-')}</td>
-      <td>${escHtml(r.blb_request_use_date || '-')}</td>
-      <td>${escHtml(r.blb_request_receive_date || '-')}</td>
+      <td>${fmtDate(r.blb_request_use_date)}</td>
+      <td>${fmtDate(r.blb_request_receive_date)}</td>
       <td style="color:#dc2626;font-family:'Sarabun',sans-serif">${escHtml(r.blb_req_reject_reason_name || '')}</td>
       <td style="text-align:center">${r.blb_request_lock === 'Y' ? '<span class="status-tag" style="background:#fee2e2;color:#991b1b">LOCKED</span>' : '-'}</td>
       <td style="text-align:center">${r.tfnl === 2 ? '<span class="status-tag" style="background:#fef3c7;color:#92400e">FN LOCK</span>' : '-'}</td>
