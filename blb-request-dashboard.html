@@ -477,6 +477,115 @@
     background: var(--bg); color: var(--text);
   }
   .timestamp { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* Patient Cards */
+  .patient-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+    padding: 16px 18px;
+  }
+  .pcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.2s;
+    position: relative;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .pcard:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .pcard.locked { border-left-color: #dc2626; background: #fef2f2; }
+  .pcard.received { border-left-color: #059669; }
+  .pcard.rejected { border-left-color: #991b1b; background: #fee2e2; }
+  .pcard-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  .pcard-name {
+    font-size: 17px; font-weight: 700; color: var(--text);
+    line-height: 1.3;
+  }
+  .pcard-hn {
+    font-size: 13px; color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2px;
+  }
+  .pcard-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 0;
+    font-size: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .pcard-row:first-of-type { border-top: none; }
+  .pcard-row-label {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 80px;
+  }
+  .pcard-row-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+  }
+  .pcard-row-value.dept { font-family: 'Sarabun', sans-serif; font-size: 13px; }
+  .pcard-badges {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-bottom: 8px;
+  }
+  .pcard-reject {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pcard-dates {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .pcard-date-item { text-align: center; }
+  .pcard-date-label {
+    font-size: 10px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    margin-bottom: 2px;
+  }
+  .pcard-date-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700;
+    color: var(--text);
+  }
+  .pcard-date-value.empty { color: var(--border); }
+
+  /* View Toggle */
+  .view-toggle {
+    display: flex; gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .view-toggle button {
+    padding: 5px 14px;
+    background: var(--surface);
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .view-toggle button:not(:last-child) { border-right: 1px solid var(--border); }
+  .view-toggle button.active { background: var(--primary); color: #fff; }
 </style>
 </head>
 <body>
@@ -644,6 +753,7 @@ let dashboardData = [];
 let connMode = 'bms';
 let pgConnected = false;
 let pgConfig = null;
+let viewMode = 'card'; // 'card' | 'table'
 
 // == Utilities ==
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
@@ -1176,6 +1286,12 @@ function applyFilter() {
   renderDashboard(filtered);
 }
 
+function switchView(mode) {
+  viewMode = mode;
+  try { localStorage.setItem('blb-req-view-mode', mode); } catch(e) {}
+  applyFilter();
+}
+
 function renderDashboard(data) {
   const content = document.getElementById('dashContent');
   const filterBar = content.querySelector('.filter-bar');
@@ -1264,13 +1380,75 @@ function renderDashboard(data) {
   ]);
   html += `</div>`;
 
-  // Detail Table
+  // Detail section with view toggle
   html += `<div class="dash-section">
     <div class="dash-section-header">
-      <div class="dash-section-title">&#9776; รายละเอียดคำขอ (${numberFormat(data.length)} records)</div>
-      <span class="dash-section-badge" style="background:var(--surface2);color:var(--text-muted);">Raw Data</span>
-    </div>
-    <div class="detail-table-wrap">
+      <div class="dash-section-title">&#128101; ข้อมูลคำขอเลือดผู้ป่วย (${numberFormat(data.length)} records)</div>
+      <div class="view-toggle">
+        <button class="${viewMode==='card'?'active':''}" onclick="switchView('card')">&#9638; Cards</button>
+        <button class="${viewMode==='table'?'active':''}" onclick="switchView('table')">&#9776; Table</button>
+      </div>
+    </div>`;
+
+  if (viewMode === 'card') {
+    html += `<div class="patient-cards">`;
+    data.forEach(r => {
+      const isLocked = r.blb_request_lock === 'Y';
+      const isReceived = !!r.blb_request_receive_date;
+      const isRejected = !!r.blb_req_reject_reason_name;
+      let cardClass = '';
+      if (isRejected) cardClass = 'rejected';
+      else if (isLocked) cardClass = 'locked';
+      else if (isReceived) cardClass = 'received';
+
+      html += `<div class="pcard ${cardClass}">
+        <div class="pcard-head">
+          <div>
+            <div class="pcard-name">${escHtml(r.fullname || '-')}</div>
+            <div class="pcard-hn">HN: ${escHtml(r.hn || '-')}  ${r.van ? '&middot; ' + escHtml(r.van) : ''}</div>
+          </div>
+          ${bloodGroupTag(r.bg || '-')}
+        </div>
+        <div class="pcard-badges">
+          ${statusTag(r.blb_request_status_name)}
+          ${r.blb_request_type_name ? `<span class="status-tag" style="background:#dbeafe;color:#1e40af">${escHtml(r.blb_request_type_name)}</span>` : ''}
+          ${isLocked ? '<span class="status-tag" style="background:#fee2e2;color:#991b1b">&#128274; LOCKED</span>' : ''}
+          ${r.tfnl === 2 ? '<span class="status-tag" style="background:#fef3c7;color:#92400e">&#128176; FN LOCK</span>' : ''}
+        </div>
+        <div class="pcard-row">
+          <span class="pcard-row-label">Sample</span>
+          <span class="pcard-row-value">${escHtml(r.blb_request_sample_no || '-')}</span>
+        </div>
+        <div class="pcard-row">
+          <span class="pcard-row-label">แผนก</span>
+          <span class="pcard-row-value dept">${escHtml(r.department || '-')}</span>
+        </div>
+        ${r.spclty ? `<div class="pcard-row">
+          <span class="pcard-row-label">Spclty</span>
+          <span class="pcard-row-value dept">${escHtml(r.spclty)}</span>
+        </div>` : ''}
+        <div class="pcard-dates">
+          <div class="pcard-date-item">
+            <div class="pcard-date-label">สั่ง</div>
+            <div class="pcard-date-value">${fmtDate(r.blb_request_order_date)}</div>
+            <div class="pcard-date-value" style="font-size:10px;font-weight:500;color:var(--text-muted)">${fmtTime(r.blb_request_order_time)}</div>
+          </div>
+          <div class="pcard-date-item">
+            <div class="pcard-date-label">ใช้</div>
+            <div class="pcard-date-value ${r.blb_request_use_date ? '' : 'empty'}">${fmtDate(r.blb_request_use_date)}</div>
+          </div>
+          <div class="pcard-date-item">
+            <div class="pcard-date-label">รับ</div>
+            <div class="pcard-date-value ${r.blb_request_receive_date ? '' : 'empty'}">${fmtDate(r.blb_request_receive_date)}</div>
+          </div>
+        </div>
+        ${isRejected ? `<div class="pcard-reject">&#10060; ${escHtml(r.blb_req_reject_reason_name)}</div>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    // Table view
+    html += `<div class="detail-table-wrap">
       <table class="detail-table">
         <thead><tr>
           <th>#</th>
@@ -1292,29 +1470,32 @@ function renderDashboard(data) {
           <th>Finance</th>
         </tr></thead><tbody>`;
 
-  data.forEach((r, i) => {
-    html += `<tr>
-      <td class="num">${i + 1}</td>
-      <td>${escHtml(r.blb_request_sample_no || '-')}</td>
-      <td>${escHtml(r.hn || '-')}</td>
-      <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
-      <td>${escHtml(r.van || '-')}</td>
-      <td>${bloodGroupTag(r.bg || '-')}</td>
-      <td>${fmtDate(r.blb_request_order_date)}</td>
-      <td>${fmtTime(r.blb_request_order_time)}</td>
-      <td>${statusTag(r.blb_request_status_name)}</td>
-      <td>${escHtml(r.blb_request_type_name || '-')}</td>
-      <td style="font-family:'Sarabun',sans-serif">${escHtml(r.department || '-')}</td>
-      <td style="font-family:'Sarabun',sans-serif">${escHtml(r.spclty || '-')}</td>
-      <td>${fmtDate(r.blb_request_use_date)}</td>
-      <td>${fmtDate(r.blb_request_receive_date)}</td>
-      <td style="color:#dc2626;font-family:'Sarabun',sans-serif">${escHtml(r.blb_req_reject_reason_name || '')}</td>
-      <td style="text-align:center">${r.blb_request_lock === 'Y' ? '<span class="status-tag" style="background:#fee2e2;color:#991b1b">LOCKED</span>' : '-'}</td>
-      <td style="text-align:center">${r.tfnl === 2 ? '<span class="status-tag" style="background:#fef3c7;color:#92400e">FN LOCK</span>' : '-'}</td>
-    </tr>`;
-  });
+    data.forEach((r, i) => {
+      html += `<tr>
+        <td class="num">${i + 1}</td>
+        <td>${escHtml(r.blb_request_sample_no || '-')}</td>
+        <td>${escHtml(r.hn || '-')}</td>
+        <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
+        <td>${escHtml(r.van || '-')}</td>
+        <td>${bloodGroupTag(r.bg || '-')}</td>
+        <td>${fmtDate(r.blb_request_order_date)}</td>
+        <td>${fmtTime(r.blb_request_order_time)}</td>
+        <td>${statusTag(r.blb_request_status_name)}</td>
+        <td>${escHtml(r.blb_request_type_name || '-')}</td>
+        <td style="font-family:'Sarabun',sans-serif">${escHtml(r.department || '-')}</td>
+        <td style="font-family:'Sarabun',sans-serif">${escHtml(r.spclty || '-')}</td>
+        <td>${fmtDate(r.blb_request_use_date)}</td>
+        <td>${fmtDate(r.blb_request_receive_date)}</td>
+        <td style="color:#dc2626;font-family:'Sarabun',sans-serif">${escHtml(r.blb_req_reject_reason_name || '')}</td>
+        <td style="text-align:center">${r.blb_request_lock === 'Y' ? '<span class="status-tag" style="background:#fee2e2;color:#991b1b">LOCKED</span>' : '-'}</td>
+        <td style="text-align:center">${r.tfnl === 2 ? '<span class="status-tag" style="background:#fef3c7;color:#92400e">FN LOCK</span>' : '-'}</td>
+      </tr>`;
+    });
 
-  html += `</tbody></table></div></div>`;
+    html += `</tbody></table></div>`;
+  }
+
+  html += `</div>`;
 
   const section = document.createElement('div');
   section.innerHTML = html;
@@ -1364,6 +1545,12 @@ function stopAutoRefresh() {
 // == Init ==
 window.addEventListener('DOMContentLoaded', () => {
   setDefaultDates();
+
+  // Restore view mode preference
+  try {
+    const savedView = localStorage.getItem('blb-req-view-mode');
+    if (savedView === 'card' || savedView === 'table') viewMode = savedView;
+  } catch(e) {}
 
   const savedPg = loadPgConfig();
   if (savedPg) fillPgFields(savedPg);
