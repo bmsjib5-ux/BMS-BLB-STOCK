@@ -1214,8 +1214,7 @@ async function loadDashboard() {
       r.blb_request_sample_no,
       r.hn,
       CONCAT(bg.name,' ',br.blb_blood_rh_name) AS bg,
-      pt.blood_group AS patient_bg,
-      pt.rh_grp AS patient_rh,
+      pt.blood_grp AS patient_bg,
       CASE WHEN (r.vn IS NOT NULL) AND (r.vn <> '') THEN r.vn ELSE r.an END AS van,
       r.blb_request_order_date,
       r.blb_request_order_time,
@@ -1432,12 +1431,11 @@ function renderDashboard(data) {
       else if (kind === 'received') cardClass = 'received';
       else if (isLocked) cardClass = 'locked';
 
-      // Patient's own blood group (from patient table)
-      const patRh = (r.patient_rh || '').trim();
-      const rhSym = patRh.toLowerCase().startsWith('p') ? 'Rh+' : (patRh.toLowerCase().startsWith('n') ? 'Rh-' : (patRh || ''));
-      const patientBg = (r.patient_bg || '').trim() ? `${r.patient_bg}${rhSym ? ' ' + rhSym : ''}` : '';
+      // Patient's own blood group (from patient table, e.g., "A", "B+", "O-")
+      const patientBg = (r.patient_bg || '').trim();
       const requestBg = (r.bg || '').trim();
-      const bgMismatch = patientBg && requestBg && patientBg.replace(/\s+/g,'').toUpperCase() !== requestBg.replace(/\s+/g,'').toUpperCase();
+      const normalize = s => (s || '').replace(/\s+/g, '').replace(/rh/i, '').toUpperCase();
+      const bgMismatch = patientBg && requestBg && normalize(patientBg) !== normalize(requestBg);
 
       html += `<div class="pcard ${cardClass}">
         <div class="pcard-head">
@@ -1532,12 +1530,7 @@ function renderDashboard(data) {
         <td>${escHtml(r.hn || '-')}</td>
         <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
         <td>${escHtml(r.van || '-')}</td>
-        <td>${(() => {
-          const prh = (r.patient_rh || '').trim();
-          const rhS = prh.toLowerCase().startsWith('p') ? 'Rh+' : (prh.toLowerCase().startsWith('n') ? 'Rh-' : '');
-          const pbg = (r.patient_bg || '').trim();
-          return pbg ? bloodGroupTag(pbg + (rhS ? ' ' + rhS : '')) : '-';
-        })()}</td>
+        <td>${r.patient_bg ? bloodGroupTag(r.patient_bg) : '-'}</td>
         <td>${bloodGroupTag(r.bg || '-')}</td>
         <td>${fmtDate(r.blb_request_order_date)}</td>
         <td>${fmtTime(r.blb_request_order_time)}</td>
