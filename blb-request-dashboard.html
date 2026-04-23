@@ -496,8 +496,12 @@
     font-family: 'Sarabun', sans-serif;
   }
   .pcard:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .pcard.urgent { border-left-color: #dc2626; background: #fee2e2; }
+  .pcard.urgent .pcard-name { color: #991b1b; }
+  .pcard.cancelled { border-left-color: #9ca3af; background: #f3f4f6; opacity: 0.9; }
+  .pcard.cancelled .pcard-name { color: #6b7280; text-decoration: line-through; }
+  .pcard.received { border-left-color: #059669; background: #ecfdf5; }
   .pcard.locked { border-left-color: #dc2626; background: #fef2f2; }
-  .pcard.received { border-left-color: #059669; }
   .pcard.rejected { border-left-color: #991b1b; background: #fee2e2; }
   .pcard-head {
     display: flex; justify-content: space-between; align-items: flex-start;
@@ -805,12 +809,23 @@ function bloodGroupTag(group) {
 function statusTag(name) {
   const n = (name || '').toLowerCase();
   let bg = '#e5e7eb', fg = '#374151';
-  if (n.includes('complete') || n.includes('เสร็จ') || n.includes('รับ')) { bg='#dcfce7'; fg='#166534'; }
+  if (n.includes('urgent') || n.includes('ด่วน')) { bg='#fee2e2'; fg='#991b1b'; }
+  else if (n.includes('cancel') || n.includes('reject') || n.includes('ยกเลิก')) { bg='#e5e7eb'; fg='#4b5563'; }
+  else if (n.includes('complete') || n.includes('เสร็จ') || n.includes('รับ')) { bg='#dcfce7'; fg='#166534'; }
   else if (n.includes('pending') || n.includes('รอ')) { bg='#fef3c7'; fg='#92400e'; }
-  else if (n.includes('cancel') || n.includes('reject') || n.includes('ยกเลิก')) { bg='#fee2e2'; fg='#991b1b'; }
-  else if (n.includes('urgent') || n.includes('ด่วน')) { bg='#fecaca'; fg='#7f1d1d'; }
   else if (n.includes('order') || n.includes('สั่ง')) { bg='#dbeafe'; fg='#1e40af'; }
   return `<span class="status-tag" style="background:${bg};color:${fg}">${escHtml(name || '-')}</span>`;
+}
+
+// Classify row for card background & sorting priority
+function classifyRow(r) {
+  const status = (r.blb_request_status_name || '').toLowerCase();
+  const type = (r.blb_request_type_name || '').toLowerCase();
+  const combined = status + ' ' + type;
+  if (combined.includes('ด่วน') || combined.includes('urgent')) return 'urgent';
+  if (status.includes('ยกเลิก') || status.includes('cancel') || status.includes('reject')) return 'cancelled';
+  if (status.includes('รับ') || status.includes('complete')) return 'received';
+  return 'normal';
 }
 
 // == Date ==
@@ -1282,7 +1297,16 @@ function populateDeptFilter(data) {
 
 function applyFilter() {
   const dept = document.getElementById('deptFilter').value;
-  const filtered = dept ? dashboardData.filter(r => r.department === dept) : dashboardData;
+  const filtered = dept ? dashboardData.filter(r => r.department === dept) : dashboardData.slice();
+  // Sort: urgent first, then by date+time desc
+  filtered.sort((a, b) => {
+    const aUrgent = classifyRow(a) === 'urgent' ? 0 : 1;
+    const bUrgent = classifyRow(b) === 'urgent' ? 0 : 1;
+    if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+    const aKey = `${a.blb_request_order_date || ''} ${a.blb_request_order_time || ''}`;
+    const bKey = `${b.blb_request_order_date || ''} ${b.blb_request_order_time || ''}`;
+    return bKey.localeCompare(aKey);
+  });
   renderDashboard(filtered);
 }
 
@@ -1394,12 +1418,15 @@ function renderDashboard(data) {
     html += `<div class="patient-cards">`;
     data.forEach(r => {
       const isLocked = r.blb_request_lock === 'Y';
-      const isReceived = !!r.blb_request_receive_date;
       const isRejected = !!r.blb_req_reject_reason_name;
+      const kind = classifyRow(r);
+      // priority: urgent > cancelled > rejected > received > locked > normal
       let cardClass = '';
-      if (isRejected) cardClass = 'rejected';
+      if (kind === 'urgent') cardClass = 'urgent';
+      else if (kind === 'cancelled') cardClass = 'cancelled';
+      else if (isRejected) cardClass = 'rejected';
+      else if (kind === 'received') cardClass = 'received';
       else if (isLocked) cardClass = 'locked';
-      else if (isReceived) cardClass = 'received';
 
       html += `<div class="pcard ${cardClass}">
         <div class="pcard-head">
