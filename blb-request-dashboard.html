@@ -1243,7 +1243,7 @@ async function loadDashboard() {
     LEFT OUTER JOIN ward wd ON wd.ward = i.ward
     WHERE 1=1
       AND TO_CHAR(r.blb_request_order_date,'yyyy-mm-dd') BETWEEN '${dFrom}' AND '${dTo}'
-    ORDER BY r.blb_request_order_date, r.blb_request_order_time
+    ORDER BY r.blb_request_order_date DESC, r.blb_request_order_time DESC
   `;
 
   const data = await executeQuery(sql);
