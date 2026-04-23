@@ -1464,6 +1464,10 @@ function renderDashboard(data) {
           </span>
         </div>
         <div class="pcard-row">
+          <span class="pcard-row-label">เลขที่ใบขอ</span>
+          <span class="pcard-row-value" style="color:var(--primary)">${escHtml(r.blb_request_id || '-')}</span>
+        </div>
+        <div class="pcard-row">
           <span class="pcard-row-label">Sample</span>
           <span class="pcard-row-value">${escHtml(r.blb_request_sample_no || '-')}</span>
         </div>
@@ -1500,6 +1504,7 @@ function renderDashboard(data) {
       <table class="detail-table">
         <thead><tr>
           <th>#</th>
+          <th>เลขที่ใบขอ</th>
           <th>Sample No.</th>
           <th>HN</th>
           <th>ชื่อ-สกุล</th>
@@ -1522,6 +1527,7 @@ function renderDashboard(data) {
     data.forEach((r, i) => {
       html += `<tr>
         <td class="num">${i + 1}</td>
+        <td style="color:var(--primary);font-weight:700">${escHtml(r.blb_request_id || '-')}</td>
         <td>${escHtml(r.blb_request_sample_no || '-')}</td>
         <td>${escHtml(r.hn || '-')}</td>
         <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
