@@ -1,10 +1,24 @@
+// Load .env file if exists
+try { require('dotenv').config(); } catch(e) {}
+
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 7712;
+
+// Default DB config from environment
+const DEFAULT_DB = {
+  host: process.env.DB_HOST || '',
+  port: process.env.DB_PORT || '',
+  database: process.env.DB_DATABASE || '',
+  user: process.env.DB_USER || '',
+  password: process.env.DB_PASSWORD || '',
+};
+const HAS_DEFAULT_DB = !!(DEFAULT_DB.host && DEFAULT_DB.database && DEFAULT_DB.user);
 
 // Middleware
 app.use(cors());
@@ -42,21 +56,49 @@ function getPool(cfg) {
   return pools[key];
 }
 
+// Merge client config with server defaults (client takes precedence if provided)
+function resolveDbConfig(body) {
+  return {
+    host: body.host || DEFAULT_DB.host,
+    port: body.port || DEFAULT_DB.port || 5432,
+    database: body.database || DEFAULT_DB.database,
+    user: body.user || DEFAULT_DB.user,
+    password: (body.password !== undefined && body.password !== '') ? body.password : DEFAULT_DB.password,
+  };
+}
+
+// ============================================
+// GET /api/config/status - Check if server has default DB config
+// ============================================
+app.get('/api/config/status', (req, res) => {
+  res.json({
+    hasDefaultDb: HAS_DEFAULT_DB,
+    defaults: HAS_DEFAULT_DB ? {
+      host: DEFAULT_DB.host,
+      port: DEFAULT_DB.port || 5432,
+      database: DEFAULT_DB.database,
+      user: DEFAULT_DB.user,
+    } : null,
+  });
+});
+
 // ============================================
 // POST /api/sql - Execute SQL query
 // ============================================
 app.post('/api/sql', async (req, res) => {
-  const { host, port, database, user, password, sql } = req.body;
+  const cfg = resolveDbConfig(req.body);
+  const { host, port, database, user, password } = cfg;
+  const { sql } = req.body;
 
   // Validate required fields
   if (!sql) {
     return res.status(400).json({ error: 'Missing required field: sql' });
   }
   if (!database) {
-    return res.status(400).json({ error: 'Missing required field: database' });
+    return res.status(400).json({ error: 'Missing database (set DB_DATABASE in .env or send in body)' });
   }
   if (!user) {
-    return res.status(400).json({ error: 'Missing required field: user' });
+    return res.status(400).json({ error: 'Missing user (set DB_USER in .env or send in body)' });
   }
 
   // Block dangerous statements
@@ -71,7 +113,7 @@ app.post('/api/sql', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    const pool = getPool({ host, port, database, user, password });
+    const pool = getPool(cfg);
     const result = await pool.query(sql);
 
     const elapsed = Date.now() - startTime;
@@ -134,6 +176,13 @@ app.listen(PORT, () => {
   console.log(`  Dashboard : http://localhost:${PORT}`);
   console.log(`  API       : http://localhost:${PORT}/api/sql`);
   console.log(`  Health    : http://localhost:${PORT}/api/health`);
+  if (HAS_DEFAULT_DB) {
+    console.log(`  Default DB: ${DEFAULT_DB.database}@${DEFAULT_DB.host}:${DEFAULT_DB.port || 5432} (user: ${DEFAULT_DB.user})`);
+    console.log(`  >> Client can use API-only mode (Host/DB/User optional)`);
+  } else {
+    console.log(`  Default DB: (not configured) - client must provide credentials`);
+    console.log(`  >> Set DB_HOST, DB_DATABASE, DB_USER, DB_PASSWORD in .env to enable API-only mode`);
+  }
   console.log('==========================================');
   console.log('');
 });

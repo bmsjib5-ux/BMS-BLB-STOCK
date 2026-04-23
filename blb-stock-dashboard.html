@@ -578,33 +578,36 @@
 
       <!-- PostgreSQL Panel -->
       <div class="conn-panel" id="panelPg">
-        <div class="pg-row">
-          <div class="field-group" style="flex:2">
-            <div class="field-label">Host</div>
-            <input type="text" class="field-input" id="pgHost" placeholder="localhost">
-          </div>
-          <div class="field-group" style="flex:1">
-            <div class="field-label">Port</div>
-            <input type="text" class="field-input" id="pgPort" placeholder="5432" value="5432">
-          </div>
-        </div>
-        <div class="field-group">
-          <div class="field-label">Database</div>
-          <input type="text" class="field-input" id="pgDatabase" placeholder="hosxp_db">
-        </div>
-        <div class="pg-row">
-          <div class="field-group">
-            <div class="field-label">Username</div>
-            <input type="text" class="field-input" id="pgUser" placeholder="postgres">
-          </div>
-          <div class="field-group">
-            <div class="field-label">Password</div>
-            <input type="password" class="field-input" id="pgPassword" placeholder="********">
-          </div>
-        </div>
         <div class="field-group">
           <div class="field-label">API Endpoint (REST proxy)</div>
-          <input type="text" class="field-input" id="pgApiUrl" placeholder="http://localhost:7712/api/sql">
+          <input type="text" class="field-input" id="pgApiUrl" placeholder="http://localhost:7712/api/sql" onchange="checkServerConfig()" onblur="checkServerConfig()">
+        </div>
+        <div id="pgServerInfo" style="display:none; margin-bottom:10px; padding:8px 10px; border-radius:6px; background:var(--success-bg); color:var(--success); border:1px solid var(--success); font-size:11px;"></div>
+        <div id="pgCredFields">
+          <div class="pg-row">
+            <div class="field-group" style="flex:2">
+              <div class="field-label">Host</div>
+              <input type="text" class="field-input" id="pgHost" placeholder="localhost">
+            </div>
+            <div class="field-group" style="flex:1">
+              <div class="field-label">Port</div>
+              <input type="text" class="field-input" id="pgPort" placeholder="5432" value="5432">
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Database</div>
+            <input type="text" class="field-input" id="pgDatabase" placeholder="hosxp_db">
+          </div>
+          <div class="pg-row">
+            <div class="field-group">
+              <div class="field-label">Username</div>
+              <input type="text" class="field-input" id="pgUser" placeholder="postgres">
+            </div>
+            <div class="field-group">
+              <div class="field-label">Password</div>
+              <input type="password" class="field-input" id="pgPassword" placeholder="********">
+            </div>
+          </div>
         </div>
         <div class="status-row">
           <span class="status-dot" id="pgDot"></span>
@@ -934,6 +937,37 @@ function fillPgFields(cfg) {
   document.getElementById('pgUser').value = cfg.user || '';
   document.getElementById('pgPassword').value = cfg.password || '';
   document.getElementById('pgApiUrl').value = cfg.apiUrl || '';
+  checkServerConfig();
+}
+
+// Check if the API server has default DB config
+async function checkServerConfig() {
+  const apiUrl = document.getElementById('pgApiUrl').value.trim();
+  const infoDiv = document.getElementById('pgServerInfo');
+  const credFields = document.getElementById('pgCredFields');
+  if (!apiUrl) { infoDiv.style.display = 'none'; credFields.style.display = 'block'; return; }
+
+  // Build status URL from API URL (replace /api/sql with /api/config/status)
+  const statusUrl = apiUrl.replace(/\/api\/sql\/?$/, '/api/config/status');
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(statusUrl, { method: 'GET', signal: controller.signal });
+    clearTimeout(tid);
+    if (!res.ok) throw new Error();
+    const info = await res.json();
+    if (info.hasDefaultDb && info.defaults) {
+      infoDiv.style.display = 'block';
+      infoDiv.innerHTML = `&#9989; Server มี DB config พร้อมใช้งาน<br><span style="font-family:'JetBrains Mono',monospace; font-size:10px;">${escHtml(info.defaults.database)}@${escHtml(info.defaults.host)}:${info.defaults.port} (user: ${escHtml(info.defaults.user)})</span>`;
+      credFields.style.display = 'none';
+    } else {
+      infoDiv.style.display = 'none';
+      credFields.style.display = 'block';
+    }
+  } catch (e) {
+    infoDiv.style.display = 'none';
+    credFields.style.display = 'block';
+  }
 }
 
 async function handlePgConnect() {
