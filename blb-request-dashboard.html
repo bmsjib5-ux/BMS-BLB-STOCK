@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMS Blood Request Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef4;
+    --border: #d0d9e3;
+    --text: #1a2332;
+    --text-muted: #5a6b7f;
+    --primary: #2563eb;
+    --primary-light: #bfdbfe;
+    --primary-glow: rgba(37,99,235,0.1);
+    --success: #059669;
+    --success-bg: rgba(5,150,105,0.08);
+    --error: #dc2626;
+    --error-bg: rgba(220,38,38,0.08);
+    --warn: #d97706;
+    --warn-bg: rgba(217,119,6,0.08);
+    --accent: #2563eb;
+    --teal: #059669;
+    --blue: #2563eb;
+    --purple: #7c3aed;
+    --orange: #ea580c;
+    --pink: #db2777;
+    --cyan: #0891b2;
+    --indigo: #4f46e5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: #0c2340;
+    border-bottom: 1px solid #1e3a5f;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo { display: flex; align-items: center; gap: 10px; }
+  .logo-shield {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; color: #fff; }
+  .header h1 span { color: #60a5fa; }
+  .header-subtitle {
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    padding: 3px 10px; background: rgba(255,255,255,0.08); border-radius: 4px;
+  }
+
+  /* Nav Tabs */
+  .nav-tabs {
+    display: flex; gap: 8px; margin-left: 16px;
+  }
+  .nav-tab {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .nav-tab:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .nav-tab.active { background: rgba(37,99,235,0.3); color: #60a5fa; border-color: #60a5fa; }
+
+  .header-spacer { flex: 1; }
+  .conn-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 14px; font-weight: 700;
+  }
+  .conn-badge.disconnected { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); }
+  .conn-badge.connected { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .refresh-btn {
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    border: none; border-radius: 6px;
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .refresh-btn:hover { filter: brightness(1.15); }
+  .refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+
+  /* Settings Icon Button */
+  .settings-btn {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .settings-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .settings-btn.active { background: rgba(37,99,235,0.3); color: #60a5fa; border-color: #60a5fa; }
+
+  /* Settings Drawer */
+  .settings-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); z-index: 200;
+  }
+  .settings-overlay.open { display: block; }
+  .settings-drawer {
+    position: fixed; top: 0; right: -420px; bottom: 0;
+    width: 400px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -8px 0 30px rgba(0,0,0,0.15);
+    z-index: 201;
+    overflow-y: auto;
+    transition: right 0.3s ease;
+    display: flex; flex-direction: column;
+  }
+  .settings-drawer.open { right: 0; }
+  .settings-drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    background: #0c2340;
+    border-bottom: 1px solid #1e3a5f;
+    flex-shrink: 0;
+  }
+  .settings-drawer-header h2 {
+    font-size: 15px; font-weight: 700; color: #fff;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .settings-drawer-header h2 span { color: #60a5fa; }
+  .settings-close-btn {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .settings-close-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+  .settings-drawer-body { padding: 16px 20px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+
+  .sidebar-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .section-title {
+    font-size: 14px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .field-group { margin-bottom: 10px; }
+  .field-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+  .field-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .field-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
+  .status-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; margin-top: 6px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+  .status-dot.ok { background: var(--success); }
+
+  .btn {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); color: var(--text);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--primary); background: var(--primary-glow); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.connected { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+
+  .conn-tabs {
+    display: flex; gap: 0; margin-bottom: 12px;
+    border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  }
+  .conn-tab {
+    flex: 1; padding: 6px 8px; text-align: center;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    background: var(--bg); color: var(--text-muted);
+    border: none; transition: all 0.15s;
+  }
+  .conn-tab:not(:last-child) { border-right: 1px solid var(--border); }
+  .conn-tab.active { background: var(--primary); color: #fff; }
+  .conn-panel { display: none; }
+  .conn-panel.active { display: block; }
+
+  .pg-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .pg-row .field-group { flex: 1; margin-bottom: 0; }
+  .pg-test-result {
+    margin-top: 6px; padding: 6px 10px; border-radius: 6px;
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    display: none;
+  }
+  .pg-test-result.ok { display: block; background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+  .pg-test-result.err { display: block; background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+
+  /* Content */
+  .content {
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 20px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  /* Date Filter Bar */
+  .filter-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .filter-label { font-size: 14px; font-weight: 700; color: var(--text-muted); }
+  .filter-date {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+  }
+  .filter-btn {
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    color: #fff;
+    border: none; border-radius: 6px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+  }
+  .filter-btn:hover { filter: brightness(1.1); }
+  .filter-quick { display: flex; gap: 6px; }
+  .filter-quick button {
+    padding: 6px 12px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .filter-quick button:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Summary Cards */
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .sc {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .sc:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+  .sc .sc-stripe {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+  .sc .sc-icon { font-size: 26px; margin-bottom: 4px; }
+  .sc .sc-val {
+    font-size: 40px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+  .sc .sc-label {
+    font-size: 14px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    margin-top: 4px;
+  }
+
+  /* Dashboard Sections */
+  .dash-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .dash-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-section-title {
+    font-size: 18px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dash-section-badge {
+    font-size: 14px; font-weight: 700;
+    padding: 2px 10px; border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Bar chart */
+  .bar-chart-area { padding: 16px 18px; }
+  .bar-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .bar-label {
+    min-width: 180px; width: 180px;
+    font-size: 14px; font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    flex: 1; height: 32px;
+    background: var(--bg);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 6px;
+    transition: width 0.6s ease;
+    display: flex; align-items: center; padding-left: 10px;
+    min-width: 40px;
+  }
+  .bar-fill span {
+    font-size: 14px; font-weight: 700; color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .bar-count {
+    width: 60px; min-width: 60px;
+    font-size: 16px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
+  }
+
+  /* Table */
+  .detail-table-wrap { overflow-x: auto; }
+  .detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .detail-table th {
+    position: sticky; top: 0;
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border);
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 14px; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .detail-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .detail-table tr:hover td { background: var(--primary-glow); }
+  .detail-table .num { text-align: right; font-weight: 700; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .tag-a { background: #fef3c7; color: #92400e; }
+  .tag-b { background: #dbeafe; color: #1e40af; }
+  .tag-o { background: #dcfce7; color: #166534; }
+  .tag-ab { background: #fce7f3; color: #9d174d; }
+  .tag-default { background: var(--surface2); color: var(--text-muted); }
+
+  .status-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* Spinner */
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-overlay {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    gap: 12px;
+  }
+  .loading-overlay .spinner { font-size: 32px; }
+  .loading-text { font-size: 18px; font-weight: 600; }
+
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    gap: 8px;
+  }
+  .empty-icon { font-size: 56px; opacity: 0.3; }
+  .empty-text { font-size: 22px; font-weight: 600; }
+  .empty-sub { font-size: 16px; }
+
+  /* Toast */
+  .toast-wrap {
+    position: fixed; bottom: 16px; right: 16px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    animation: slideIn 0.3s ease;
+    max-width: 380px;
+  }
+  .toast.ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+  .toast.err { background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+  .toast.info { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+  .auto-refresh-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .auto-refresh-row label { font-size: 11px; color: var(--text-muted); cursor: pointer; }
+  .auto-refresh-row select {
+    font-size: 11px; padding: 2px 6px;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg); color: var(--text);
+  }
+  .timestamp { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-shield">&#9879;</div>
+    <h1>BMS <span>Blood Bank</span></h1>
+  </div>
+  <span class="header-subtitle">Request Dashboard</span>
+  <div class="nav-tabs">
+    <a class="nav-tab" href="blb-stock-dashboard.html">Stock</a>
+    <a class="nav-tab active" href="blb-request-dashboard.html">Requests</a>
+  </div>
+  <div class="header-spacer"></div>
+  <button class="refresh-btn" id="refreshBtn" disabled onclick="loadDashboard()">
+    <span id="refreshBtnText">Refresh</span>
+  </button>
+  <div class="conn-badge disconnected" id="connBadge">
+    <span class="conn-dot"></span>
+    <span id="connText">Not Connected</span>
+  </div>
+  <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+</div>
+
+<!-- Settings Drawer -->
+<div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+<div class="settings-drawer" id="settingsDrawer">
+  <div class="settings-drawer-header">
+    <h2>&#9881; <span>Settings</span></h2>
+    <button class="settings-close-btn" onclick="toggleSettings()">&#10005;</button>
+  </div>
+  <div class="settings-drawer-body">
+
+    <div class="sidebar-section">
+      <div class="section-title">Connection</div>
+      <div class="conn-tabs">
+        <button class="conn-tab active" id="tabBms" onclick="switchConnMode('bms')">BMS Session</button>
+        <button class="conn-tab" id="tabPg" onclick="switchConnMode('pg')">PostgreSQL</button>
+      </div>
+
+      <div class="conn-panel active" id="panelBms">
+        <div class="field-group">
+          <div class="field-label">Session ID (GUID)</div>
+          <input type="text" class="field-input" id="sessionId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        </div>
+        <div class="status-row">
+          <span class="status-dot" id="sessionDot"></span>
+          <span id="sessionStatusTxt" style="color:var(--text-muted)">No Session ID</span>
+        </div>
+        <div id="sessionUserInfo" style="display:none; margin-top:6px; font-size:12px;"></div>
+        <button class="btn" id="connectBtn" style="margin-top:10px" onclick="handleConnect()">Connect Session</button>
+      </div>
+
+      <div class="conn-panel" id="panelPg">
+        <div class="pg-row">
+          <div class="field-group" style="flex:2">
+            <div class="field-label">Host</div>
+            <input type="text" class="field-input" id="pgHost" placeholder="localhost">
+          </div>
+          <div class="field-group" style="flex:1">
+            <div class="field-label">Port</div>
+            <input type="text" class="field-input" id="pgPort" placeholder="5432" value="5432">
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Database</div>
+          <input type="text" class="field-input" id="pgDatabase" placeholder="hosxp_db">
+        </div>
+        <div class="pg-row">
+          <div class="field-group">
+            <div class="field-label">Username</div>
+            <input type="text" class="field-input" id="pgUser" placeholder="postgres">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Password</div>
+            <input type="password" class="field-input" id="pgPassword" placeholder="********">
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">API Endpoint (REST proxy)</div>
+          <input type="text" class="field-input" id="pgApiUrl" placeholder="http://localhost:7712/api/sql">
+        </div>
+        <div class="status-row">
+          <span class="status-dot" id="pgDot"></span>
+          <span id="pgStatusTxt" style="color:var(--text-muted)">Not Connected</span>
+        </div>
+        <button class="btn" id="pgConnectBtn" style="margin-top:10px" onclick="handlePgConnect()">Connect PostgreSQL</button>
+        <div class="pg-test-result" id="pgTestResult"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Auto Refresh</div>
+      <div class="auto-refresh-row">
+        <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()">
+        <label for="autoRefreshCheck">Auto refresh every</label>
+        <select id="autoRefreshInterval" onchange="toggleAutoRefresh()">
+          <option value="30">30 sec</option>
+          <option value="60" selected>1 min</option>
+          <option value="120">2 min</option>
+          <option value="300">5 min</option>
+        </select>
+      </div>
+      <div class="status-row">
+        <span class="timestamp" id="lastRefreshTime">-</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content" id="dashContent">
+
+  <!-- Date Filter -->
+  <div class="filter-bar">
+    <span class="filter-label">&#128197; Order Date:</span>
+    <input type="date" class="filter-date" id="dateFrom">
+    <span>ถึง</span>
+    <input type="date" class="filter-date" id="dateTo">
+    <button class="filter-btn" onclick="loadDashboard()">ค้นหา</button>
+    <div class="filter-quick">
+      <button onclick="setQuickDate('today')">วันนี้</button>
+      <button onclick="setQuickDate('yesterday')">เมื่อวาน</button>
+      <button onclick="setQuickDate('7days')">7 วัน</button>
+      <button onclick="setQuickDate('30days')">30 วัน</button>
+      <button onclick="setQuickDate('month')">เดือนนี้</button>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">&#9881;</div>
+    <div class="empty-text">Blood Request Dashboard</div>
+    <div class="empty-sub">Click the &#9881; Settings icon (top-right) to connect</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// == Constants ==
+const SESSION_COOKIE_NAME = 'bms-session-id';
+const SESSION_COOKIE_DAYS = 7;
+const SESSION_URL_PARAM = 'bms-session-id';
+const DEFAULT_TIMEOUT = 30000;
+const APP_NAME = 'BMS.BLB.RequestDashboard';
+
+// == State ==
+let sessionConnected = false;
+let sessionData = null;
+let connectionConfig = null;
+let userInfo = null;
+let autoRefreshTimer = null;
+let dashboardData = [];
+let connMode = 'bms';
+let pgConnected = false;
+let pgConfig = null;
+
+// == Utilities ==
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+function showToast(type, msg) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+function minifySql(sql) {
+  return sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim();
+}
+function numberFormat(n) { return Number(n).toLocaleString('th-TH'); }
+function nowStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function bloodGroupTag(group) {
+  const g = (group || '').toUpperCase().trim();
+  if (g.includes('AB')) return `<span class="tag tag-ab">${escHtml(group)}</span>`;
+  if (g.startsWith('A')) return `<span class="tag tag-a">${escHtml(group)}</span>`;
+  if (g.startsWith('B')) return `<span class="tag tag-b">${escHtml(group)}</span>`;
+  if (g.startsWith('O')) return `<span class="tag tag-o">${escHtml(group)}</span>`;
+  return `<span class="tag tag-default">${escHtml(group || '-')}</span>`;
+}
+
+function statusTag(name) {
+  const n = (name || '').toLowerCase();
+  let bg = '#e5e7eb', fg = '#374151';
+  if (n.includes('complete') || n.includes('เสร็จ') || n.includes('รับ')) { bg='#dcfce7'; fg='#166534'; }
+  else if (n.includes('pending') || n.includes('รอ')) { bg='#fef3c7'; fg='#92400e'; }
+  else if (n.includes('cancel') || n.includes('reject') || n.includes('ยกเลิก')) { bg='#fee2e2'; fg='#991b1b'; }
+  else if (n.includes('urgent') || n.includes('ด่วน')) { bg='#fecaca'; fg='#7f1d1d'; }
+  else if (n.includes('order') || n.includes('สั่ง')) { bg='#dbeafe'; fg='#1e40af'; }
+  return `<span class="status-tag" style="background:${bg};color:${fg}">${escHtml(name || '-')}</span>`;
+}
+
+// == Date ==
+function setDefaultDates() {
+  const today = dateStr(new Date());
+  document.getElementById('dateFrom').value = today;
+  document.getElementById('dateTo').value = today;
+}
+function setQuickDate(type) {
+  const today = new Date();
+  const from = new Date();
+  if (type === 'today') {
+    // same
+  } else if (type === 'yesterday') {
+    from.setDate(from.getDate() - 1);
+    today.setDate(today.getDate() - 1);
+  } else if (type === '7days') {
+    from.setDate(from.getDate() - 6);
+  } else if (type === '30days') {
+    from.setDate(from.getDate() - 29);
+  } else if (type === 'month') {
+    from.setDate(1);
+  }
+  document.getElementById('dateFrom').value = dateStr(from);
+  document.getElementById('dateTo').value = dateStr(today);
+  loadDashboard();
+}
+
+// == Cookie/URL ==
+function setSessionCookie(id) {
+  const expires = new Date(Date.now() + SESSION_COOKIE_DAYS * 864e5).toUTCString();
+  const secure = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${SESSION_COOKIE_NAME}=${encodeURIComponent(id)}; expires=${expires}; path=/${secure}; SameSite=Lax`;
+}
+function getSessionCookie() {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + SESSION_COOKIE_NAME + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function removeSessionCookie() {
+  document.cookie = `${SESSION_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
+function getSessionFromUrl() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get(SESSION_URL_PARAM)?.trim() || null;
+}
+function removeSessionFromUrl() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.has(SESSION_URL_PARAM)) {
+    url.searchParams.delete(SESSION_URL_PARAM);
+    window.history.replaceState({}, '', url.toString());
+  }
+}
+
+// == Settings ==
+function toggleSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  const drawer = document.getElementById('settingsDrawer');
+  const btn = document.getElementById('settingsBtn');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    btn.classList.remove('active');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    btn.classList.add('active');
+  }
+}
+
+function switchConnMode(mode) {
+  connMode = mode;
+  document.getElementById('tabBms').className = `conn-tab ${mode === 'bms' ? 'active' : ''}`;
+  document.getElementById('tabPg').className = `conn-tab ${mode === 'pg' ? 'active' : ''}`;
+  document.getElementById('panelBms').className = `conn-panel ${mode === 'bms' ? 'active' : ''}`;
+  document.getElementById('panelPg').className = `conn-panel ${mode === 'pg' ? 'active' : ''}`;
+}
+
+// == Session ==
+async function validateSession(sessionId) {
+  try {
+    const url = `https://hosxp.net/phapi/PasteJSON?Action=GET&code=${encodeURIComponent(sessionId)}`;
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, mode: 'cors' });
+    clearTimeout(tid);
+    if (!res.ok) return { MessageCode: res.status, Message: `HTTP ${res.status}` };
+    return await res.json();
+  } catch (e) {
+    return { MessageCode: 0, Message: e.name === 'AbortError' ? 'Timeout' : e.message };
+  }
+}
+
+function extractConnectionConfig(data) {
+  const result = data.result || {};
+  const ui = result.user_info || {};
+  let apiUrl, apiAuthKey;
+  if (result.key_value && typeof result.key_value === 'object') {
+    apiUrl = result.key_value['hosxp.api_url'];
+    apiAuthKey = result.key_value['hosxp.api_auth_key'];
+  }
+  if (!apiUrl) apiUrl = ui['hosxp.api_url'];
+  if (!apiAuthKey) apiAuthKey = ui['hosxp.api_auth_key'];
+  if (!apiUrl) apiUrl = ui.bms_url;
+  if (!apiAuthKey) apiAuthKey = ui.bms_session_code;
+  return { apiUrl: (apiUrl || '').replace(/\/$/, ''), apiAuthKey: apiAuthKey || '' };
+}
+
+async function handleConnect() {
+  if (sessionConnected) { disconnectSession(); return; }
+  const sessionId = document.getElementById('sessionId').value.trim();
+  if (!sessionId) { showToast('err', 'Please enter BMS Session ID'); return; }
+
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true; btn.textContent = 'Connecting...';
+
+  sessionData = await validateSession(sessionId);
+  btn.disabled = false;
+
+  if (!sessionData || sessionData.MessageCode !== 200) {
+    showToast('err', sessionData?.Message || 'Failed to validate');
+    btn.textContent = 'Connect Session';
+    return;
+  }
+
+  connectionConfig = extractConnectionConfig(sessionData);
+  userInfo = sessionData.result?.user_info || {};
+
+  if (!connectionConfig.apiUrl) {
+    showToast('err', 'No API URL in session');
+    btn.textContent = 'Connect Session';
+    return;
+  }
+
+  sessionConnected = true;
+  setSessionCookie(sessionId);
+  btn.textContent = 'Disconnect';
+  btn.classList.add('connected');
+  document.getElementById('refreshBtn').disabled = false;
+
+  const badge = document.getElementById('connBadge');
+  badge.className = 'conn-badge connected';
+  document.getElementById('connText').textContent = userInfo.name || 'Connected';
+
+  const infoDiv = document.getElementById('sessionUserInfo');
+  infoDiv.style.display = 'block';
+  infoDiv.innerHTML = `<span style="color:var(--success)">${escHtml(userInfo.name || '')}</span>`;
+
+  document.getElementById('sessionDot').className = 'status-dot ok';
+  document.getElementById('sessionStatusTxt').textContent = 'Session Active';
+  document.getElementById('sessionStatusTxt').style.color = 'var(--success)';
+
+  showToast('ok', `Connected: ${userInfo.name || 'OK'}`);
+
+  if (document.getElementById('settingsDrawer').classList.contains('open')) toggleSettings();
+  loadDashboard();
+}
+
+function disconnectSession() {
+  stopAutoRefresh();
+  sessionConnected = false;
+  sessionData = null; connectionConfig = null; userInfo = null;
+  removeSessionCookie();
+  document.getElementById('connectBtn').textContent = 'Connect Session';
+  document.getElementById('connectBtn').classList.remove('connected');
+  document.getElementById('refreshBtn').disabled = true;
+  const badge = document.getElementById('connBadge');
+  badge.className = 'conn-badge disconnected';
+  document.getElementById('connText').textContent = 'Not Connected';
+  document.getElementById('sessionUserInfo').style.display = 'none';
+  document.getElementById('sessionDot').className = 'status-dot';
+  document.getElementById('sessionStatusTxt').textContent = 'No Session ID';
+  document.getElementById('sessionStatusTxt').style.color = 'var(--text-muted)';
+}
+
+// == PG ==
+function savePgConfig() {
+  const cfg = {
+    host: document.getElementById('pgHost').value.trim(),
+    port: document.getElementById('pgPort').value.trim() || '5432',
+    database: document.getElementById('pgDatabase').value.trim(),
+    user: document.getElementById('pgUser').value.trim(),
+    password: document.getElementById('pgPassword').value,
+    apiUrl: document.getElementById('pgApiUrl').value.trim(),
+  };
+  try { localStorage.setItem('blb-pg-config', JSON.stringify({ ...cfg, password: btoa(cfg.password) })); } catch(e) {}
+  return cfg;
+}
+function loadPgConfig() {
+  try {
+    const raw = localStorage.getItem('blb-pg-config');
+    if (!raw) return null;
+    const cfg = JSON.parse(raw);
+    cfg.password = atob(cfg.password || '');
+    return cfg;
+  } catch(e) { return null; }
+}
+function fillPgFields(cfg) {
+  if (!cfg) return;
+  document.getElementById('pgHost').value = cfg.host || '';
+  document.getElementById('pgPort').value = cfg.port || '5432';
+  document.getElementById('pgDatabase').value = cfg.database || '';
+  document.getElementById('pgUser').value = cfg.user || '';
+  document.getElementById('pgPassword').value = cfg.password || '';
+  document.getElementById('pgApiUrl').value = cfg.apiUrl || '';
+}
+
+async function handlePgConnect() {
+  if (pgConnected) { disconnectPg(); return; }
+  const cfg = savePgConfig();
+  if (!cfg.apiUrl) { showToast('err', 'กรุณาระบุ API Endpoint'); return; }
+
+  const btn = document.getElementById('pgConnectBtn');
+  const resultDiv = document.getElementById('pgTestResult');
+  btn.disabled = true; btn.textContent = 'Connecting...';
+  resultDiv.className = 'pg-test-result';
+
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 10000);
+    const testBody = { host: cfg.host, port: parseInt(cfg.port) || 5432, database: cfg.database, user: cfg.user, password: cfg.password, sql: 'SELECT 1 AS ok' };
+    const res = await fetch(cfg.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(testBody), signal: controller.signal });
+    clearTimeout(tid);
+    const json = await res.json();
+    btn.disabled = false;
+
+    if (res.ok && (json.data || json.rows || json.result)) {
+      pgConnected = true; pgConfig = cfg;
+      if (sessionConnected) disconnectSession();
+      btn.textContent = 'Disconnect';
+      btn.classList.add('connected');
+      document.getElementById('refreshBtn').disabled = false;
+      document.getElementById('pgDot').className = 'status-dot ok';
+      document.getElementById('pgStatusTxt').textContent = `Connected: ${cfg.database}@${cfg.host}`;
+      document.getElementById('pgStatusTxt').style.color = 'var(--success)';
+      const badge = document.getElementById('connBadge');
+      badge.className = 'conn-badge connected';
+      document.getElementById('connText').textContent = `PG: ${cfg.database}`;
+      resultDiv.className = 'pg-test-result ok';
+      resultDiv.textContent = `Connected to ${cfg.database}@${cfg.host}:${cfg.port}`;
+      showToast('ok', `PostgreSQL Connected`);
+      connMode = 'pg';
+      if (document.getElementById('settingsDrawer').classList.contains('open')) toggleSettings();
+      loadDashboard();
+    } else {
+      resultDiv.className = 'pg-test-result err';
+      resultDiv.textContent = json.error || json.message || 'Unknown';
+      btn.textContent = 'Connect PostgreSQL';
+      showToast('err', 'Connection failed');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Connect PostgreSQL';
+    resultDiv.className = 'pg-test-result err';
+    resultDiv.textContent = e.message;
+    showToast('err', e.message);
+  }
+}
+
+function disconnectPg() {
+  stopAutoRefresh();
+  pgConnected = false; pgConfig = null;
+  document.getElementById('pgConnectBtn').textContent = 'Connect PostgreSQL';
+  document.getElementById('pgConnectBtn').classList.remove('connected');
+  document.getElementById('refreshBtn').disabled = true;
+  document.getElementById('pgDot').className = 'status-dot';
+  document.getElementById('pgStatusTxt').textContent = 'Not Connected';
+  document.getElementById('pgStatusTxt').style.color = 'var(--text-muted)';
+  document.getElementById('pgTestResult').className = 'pg-test-result';
+  const badge = document.getElementById('connBadge');
+  badge.className = 'conn-badge disconnected';
+  document.getElementById('connText').textContent = 'Not Connected';
+}
+
+// == SQL Execution ==
+async function executeQuery(sql) {
+  if (connMode === 'pg' && pgConnected && pgConfig) return executePgQuery(sql);
+  if (!sessionConnected || !connectionConfig) return null;
+  return executeBmsQuery(sql);
+}
+
+async function executeBmsQuery(sql) {
+  const fullUrl = `${connectionConfig.apiUrl}/api/sql?sql=${encodeURIComponent(minifySql(sql))}&app=${encodeURIComponent(APP_NAME)}`;
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+    const res = await fetch(fullUrl, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${connectionConfig.apiAuthKey}`, 'Content-Type': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(tid);
+    const json = await res.json();
+    if (json.MessageCode === 200) return json.data || json.result?.data || [];
+    showToast('err', `Error: ${json.Message || 'Unknown'}`);
+    return null;
+  } catch (e) {
+    showToast('err', e.name === 'AbortError' ? 'Timeout' : e.message);
+    return null;
+  }
+}
+
+async function executePgQuery(sql) {
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+    const body = { host: pgConfig.host, port: parseInt(pgConfig.port) || 5432, database: pgConfig.database, user: pgConfig.user, password: pgConfig.password, sql: minifySql(sql) };
+    const res = await fetch(pgConfig.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
+    clearTimeout(tid);
+    const json = await res.json();
+    if (res.ok) return json.data || json.rows || json.result || [];
+    showToast('err', `PG Error: ${json.error || 'Unknown'}`);
+    return null;
+  } catch (e) {
+    showToast('err', e.message);
+    return null;
+  }
+}
+
+// == Dashboard ==
+async function loadDashboard() {
+  if (!sessionConnected && !pgConnected) return;
+
+  const content = document.getElementById('dashContent');
+  const btn = document.getElementById('refreshBtn');
+  const btnText = document.getElementById('refreshBtnText');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner">&#8635;</span> Loading...';
+
+  const dFrom = document.getElementById('dateFrom').value;
+  const dTo = document.getElementById('dateTo').value;
+
+  if (!dFrom || !dTo) {
+    showToast('err', 'Please select date range');
+    btn.disabled = false;
+    btnText.textContent = 'Refresh';
+    return;
+  }
+
+  // Preserve filter bar
+  const filterBar = content.querySelector('.filter-bar');
+  content.innerHTML = '';
+  content.appendChild(filterBar);
+  const loadingDiv = document.createElement('div');
+  loadingDiv.innerHTML = `<div class="loading-overlay"><div class="spinner" style="font-size:32px">&#8635;</div><div class="loading-text">Loading request data...</div></div>`;
+  content.appendChild(loadingDiv);
+
+  const sql = `
+    SELECT
+      r.blb_request_id,
+      r.blb_request_sample_no,
+      r.hn,
+      CONCAT(bg.name,' ',br.blb_blood_rh_name) AS bg,
+      CASE WHEN (r.vn IS NOT NULL) AND (r.vn <> '') THEN r.vn ELSE r.an END AS van,
+      r.blb_request_order_date,
+      r.blb_request_order_time,
+      r.blb_request_status_id,
+      r.blb_request_use_date,
+      r.blb_request_use_time,
+      r.blb_request_receive_no,
+      r.blb_request_receive_date,
+      r.blb_request_receive_time,
+      rs.blb_request_status_name,
+      rt.blb_request_type_name,
+      CASE WHEN k.department IS NULL THEN w.name ELSE k.department END AS department,
+      CASE WHEN (r.vn IS NOT NULL) AND (r.vn <> '') THEN kd.department ELSE wd.name END AS c_dep,
+      s.name AS spclty,
+      r.blb_request_other_hospcode,
+      CONCAT(pt.pname,pt.fname,' ',pt.lname) AS fullname,
+      r.blb_request_department,
+      r.blb_request_lock,
+      r.blb_request_old_tube,
+      brrr.blb_req_reject_reason_name,
+      o.finance_lock AS opd_fnl,
+      i.finance_lock AS ipd_fnl,
+      CASE
+        WHEN (r.vn IS NOT NULL) AND (r.vn <> '') AND (o.finance_lock = 'Y') THEN 2
+        WHEN (r.vn IS NOT NULL) AND (r.vn <> '') AND ((o.finance_lock <> 'Y') OR (o.finance_lock IS NULL)) THEN 1
+        WHEN (r.an IS NOT NULL) AND (r.an <> '') AND (i.finance_lock = 'Y') THEN 2
+        WHEN (r.an IS NOT NULL) AND (r.an <> '') AND ((i.finance_lock <> 'Y') OR (i.finance_lock IS NULL)) THEN 1
+      END AS tfnl
+    FROM blb_request r
+    LEFT OUTER JOIN patient pt ON r.hn = pt.hn
+    LEFT OUTER JOIN blood_group bg ON r.blood_id = bg.blood_id
+    LEFT OUTER JOIN blb_request_status rs ON r.blb_request_status_id = rs.blb_request_status_id
+    LEFT OUTER JOIN blb_request_type rt ON r.blb_request_type_id = rt.blb_request_type_id
+    LEFT OUTER JOIN kskdepartment k ON r.depcode = k.depcode
+    LEFT OUTER JOIN ward w ON r.ward = w.ward
+    LEFT OUTER JOIN spclty s ON r.spclty = s.spclty
+    LEFT OUTER JOIN blb_blood_rh br ON r.rh_id = br.blb_blood_rh_id
+    LEFT OUTER JOIN blb_request_reject brr ON brr.blb_request_id = r.blb_request_id
+    LEFT OUTER JOIN blb_request_reject_reason brrr ON brrr.blb_request_reject_reason_id = brr.blb_request_reject_reason_id
+    LEFT OUTER JOIN ovst o ON o.vn = r.vn
+    LEFT OUTER JOIN ipt i ON i.an = r.an
+    LEFT OUTER JOIN ovst_seq os ON os.vn = r.vn
+    LEFT OUTER JOIN kskdepartment kd ON kd.depcode = o.cur_dep
+    LEFT OUTER JOIN ward wd ON wd.ward = i.ward
+    WHERE 1=1
+      AND TO_CHAR(r.blb_request_order_date,'yyyy-mm-dd') BETWEEN '${dFrom}' AND '${dTo}'
+    ORDER BY r.blb_request_order_date, r.blb_request_order_time
+  `;
+
+  const data = await executeQuery(sql);
+  btn.disabled = false;
+  btnText.textContent = 'Refresh';
+
+  // Rebuild content
+  content.innerHTML = '';
+  content.appendChild(filterBar);
+
+  if (!data) {
+    const err = document.createElement('div');
+    err.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9888;</div><div class="empty-text">Failed to load data</div></div>`;
+    content.appendChild(err);
+    return;
+  }
+
+  dashboardData = data;
+  document.getElementById('lastRefreshTime').textContent = `Last: ${nowStr()}`;
+  renderDashboard(data);
+}
+
+function renderDashboard(data) {
+  const content = document.getElementById('dashContent');
+  const filterBar = content.querySelector('.filter-bar');
+  content.innerHTML = '';
+  content.appendChild(filterBar);
+
+  if (!data || data.length === 0) {
+    const empty = document.createElement('div');
+    empty.innerHTML = `<div class="empty-state"><div class="empty-icon">&#10003;</div><div class="empty-text">No requests found</div><div class="empty-sub">No blood requests in selected date range</div></div>`;
+    content.appendChild(empty);
+    return;
+  }
+
+  // Aggregations
+  const byStatus = {}, byType = {}, byDept = {}, byBloodGroup = {}, byReceived = { received: 0, pending: 0 };
+  data.forEach(r => {
+    const st = r.blb_request_status_name || 'ไม่ระบุ';
+    byStatus[st] = (byStatus[st] || 0) + 1;
+    const tp = r.blb_request_type_name || 'ไม่ระบุ';
+    byType[tp] = (byType[tp] || 0) + 1;
+    const dp = r.department || 'ไม่ระบุ';
+    byDept[dp] = (byDept[dp] || 0) + 1;
+    const bgk = (r.bg || '').trim() || 'ไม่ระบุ';
+    byBloodGroup[bgk] = (byBloodGroup[bgk] || 0) + 1;
+    if (r.blb_request_receive_date) byReceived.received++;
+    else byReceived.pending++;
+  });
+
+  const rejected = data.filter(r => r.blb_req_reject_reason_name).length;
+  const locked = data.filter(r => r.blb_request_lock === 'Y').length;
+  const fnLocked = data.filter(r => r.tfnl === 2).length;
+
+  const statusArr = Object.entries(byStatus).sort((a,b) => b[1]-a[1]);
+  const typeArr = Object.entries(byType).sort((a,b) => b[1]-a[1]);
+  const deptArr = Object.entries(byDept).sort((a,b) => b[1]-a[1]);
+  const bgArr = Object.entries(byBloodGroup).sort((a,b) => b[1]-a[1]);
+
+  let html = '';
+
+  // Summary Cards
+  html += `<div class="summary-cards">
+    <div class="sc"><div class="sc-stripe" style="background:#2563eb"></div><div class="sc-icon">&#128203;</div><div class="sc-val" style="color:#2563eb">${numberFormat(data.length)}</div><div class="sc-label">Total Requests</div></div>
+    <div class="sc"><div class="sc-stripe" style="background:#059669"></div><div class="sc-icon">&#9989;</div><div class="sc-val" style="color:#059669">${numberFormat(byReceived.received)}</div><div class="sc-label">รับแล้ว</div></div>
+    <div class="sc"><div class="sc-stripe" style="background:#d97706"></div><div class="sc-icon">&#9200;</div><div class="sc-val" style="color:#d97706">${numberFormat(byReceived.pending)}</div><div class="sc-label">รอดำเนินการ</div></div>
+    <div class="sc"><div class="sc-stripe" style="background:#dc2626"></div><div class="sc-icon">&#10060;</div><div class="sc-val" style="color:#dc2626">${numberFormat(rejected)}</div><div class="sc-label">ปฏิเสธ</div></div>
+    <div class="sc"><div class="sc-stripe" style="background:#7c3aed"></div><div class="sc-icon">&#128274;</div><div class="sc-val" style="color:#7c3aed">${numberFormat(locked)}</div><div class="sc-label">Locked</div></div>
+    <div class="sc"><div class="sc-stripe" style="background:#ea580c"></div><div class="sc-icon">&#128176;</div><div class="sc-val" style="color:#ea580c">${numberFormat(fnLocked)}</div><div class="sc-label">Finance Lock</div></div>
+  </div>`;
+
+  // Charts row 1: Status + Type
+  html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">`;
+  html += buildBarChartHtml('&#128202; แยกตามสถานะคำขอ', statusArr, data.length, [
+    '#2563eb','#059669','#d97706','#dc2626','#7c3aed','#ea580c','#0891b2','#64748b'
+  ]);
+  html += buildBarChartHtml('&#127898; แยกตามประเภทคำขอ', typeArr, data.length, [
+    '#dc2626','#2563eb','#7c3aed','#059669','#ea580c','#0891b2','#db2777','#64748b'
+  ]);
+  html += `</div>`;
+
+  // Charts row 2: Blood Group + Department
+  html += `<div style="display:grid; grid-template-columns:0.8fr 1.2fr; gap:20px;">`;
+
+  // Blood group (with tag styling)
+  html += `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">&#9830; แยกตามหมู่เลือด</div>
+      <span class="dash-section-badge" style="background:#f3e8ff;color:#7c3aed;">${bgArr.length} หมู่</span>
+    </div>
+    <div class="bar-chart-area">`;
+  const bgColors = { A: '#f59e0b', B: '#3b82f6', AB: '#ec4899', O: '#22c55e' };
+  bgArr.forEach(([name, count], i) => {
+    const pct = Math.max((count/data.length)*100, 3);
+    const firstChar = (name || '').trim().toUpperCase();
+    let color = '#64748b';
+    for (const k of Object.keys(bgColors)) { if (firstChar.startsWith(k)) { color = bgColors[k]; break; } }
+    html += `<div class="bar-row">
+      <div class="bar-label">${bloodGroupTag(name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"><span>${numberFormat(count)}</span></div></div>
+      <div class="bar-count" style="color:${color}">${numberFormat(count)}</div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  html += buildBarChartHtml('&#127973; แยกตามแผนก (Top 10)', deptArr.slice(0, 10), data.length, [
+    '#2563eb','#7c3aed','#db2777','#ea580c','#059669','#0891b2','#4f46e5','#dc2626','#ca8a04','#64748b'
+  ]);
+  html += `</div>`;
+
+  // Detail Table
+  html += `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">&#9776; รายละเอียดคำขอ (${numberFormat(data.length)} records)</div>
+      <span class="dash-section-badge" style="background:var(--surface2);color:var(--text-muted);">Raw Data</span>
+    </div>
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead><tr>
+          <th>#</th>
+          <th>Sample No.</th>
+          <th>HN</th>
+          <th>ชื่อ-สกุล</th>
+          <th>VN/AN</th>
+          <th>หมู่เลือด</th>
+          <th>วันสั่ง</th>
+          <th>เวลาสั่ง</th>
+          <th>สถานะ</th>
+          <th>ประเภท</th>
+          <th>แผนก</th>
+          <th>Spclty</th>
+          <th>วันใช้</th>
+          <th>วันรับ</th>
+          <th>เหตุผลปฏิเสธ</th>
+          <th>Lock</th>
+          <th>Finance</th>
+        </tr></thead><tbody>`;
+
+  data.forEach((r, i) => {
+    html += `<tr>
+      <td class="num">${i + 1}</td>
+      <td>${escHtml(r.blb_request_sample_no || '-')}</td>
+      <td>${escHtml(r.hn || '-')}</td>
+      <td style="font-family:'Sarabun',sans-serif">${escHtml(r.fullname || '-')}</td>
+      <td>${escHtml(r.van || '-')}</td>
+      <td>${bloodGroupTag(r.bg || '-')}</td>
+      <td>${escHtml(r.blb_request_order_date || '-')}</td>
+      <td>${escHtml(r.blb_request_order_time || '-')}</td>
+      <td>${statusTag(r.blb_request_status_name)}</td>
+      <td>${escHtml(r.blb_request_type_name || '-')}</td>
+      <td style="font-family:'Sarabun',sans-serif">${escHtml(r.department || '-')}</td>
+      <td style="font-family:'Sarabun',sans-serif">${escHtml(r.spclty || '-')}</td>
+      <td>${escHtml(r.blb_request_use_date || '-')}</td>
+      <td>${escHtml(r.blb_request_receive_date || '-')}</td>
+      <td style="color:#dc2626;font-family:'Sarabun',sans-serif">${escHtml(r.blb_req_reject_reason_name || '')}</td>
+      <td style="text-align:center">${r.blb_request_lock === 'Y' ? '<span class="status-tag" style="background:#fee2e2;color:#991b1b">LOCKED</span>' : '-'}</td>
+      <td style="text-align:center">${r.tfnl === 2 ? '<span class="status-tag" style="background:#fef3c7;color:#92400e">FN LOCK</span>' : '-'}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+
+  const section = document.createElement('div');
+  section.innerHTML = html;
+  section.style.display = 'flex';
+  section.style.flexDirection = 'column';
+  section.style.gap = '20px';
+  content.appendChild(section);
+}
+
+function buildBarChartHtml(title, arr, total, colors) {
+  let html = `<div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">${title}</div>
+      <span class="dash-section-badge" style="background:var(--surface2);color:var(--text);">${arr.length}</span>
+    </div>
+    <div class="bar-chart-area">`;
+  if (arr.length === 0) {
+    html += `<div style="padding:20px;text-align:center;color:var(--text-muted)">No data</div>`;
+  } else {
+    arr.forEach(([name, count], i) => {
+      const pct = Math.max((count/total)*100, 3);
+      const color = colors[i % colors.length];
+      html += `<div class="bar-row">
+        <div class="bar-label" style="font-family:'Sarabun',sans-serif">${escHtml(name)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"><span>${numberFormat(count)}</span></div></div>
+        <div class="bar-count" style="color:${color}">${numberFormat(count)}</div>
+      </div>`;
+    });
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+// == Auto Refresh ==
+function toggleAutoRefresh() {
+  stopAutoRefresh();
+  if (document.getElementById('autoRefreshCheck').checked && (sessionConnected || pgConnected)) {
+    const sec = parseInt(document.getElementById('autoRefreshInterval').value) || 60;
+    autoRefreshTimer = setInterval(() => loadDashboard(), sec * 1000);
+    showToast('info', `Auto refresh every ${sec}s`);
+  }
+}
+function stopAutoRefresh() {
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+}
+
+// == Init ==
+window.addEventListener('DOMContentLoaded', () => {
+  setDefaultDates();
+
+  const savedPg = loadPgConfig();
+  if (savedPg) fillPgFields(savedPg);
+
+  const urlSession = getSessionFromUrl();
+  if (urlSession) {
+    document.getElementById('sessionId').value = urlSession;
+    removeSessionFromUrl();
+    switchConnMode('bms');
+    handleConnect();
+    return;
+  }
+  const cookieSession = getSessionCookie();
+  if (cookieSession) {
+    document.getElementById('sessionId').value = cookieSession;
+    switchConnMode('bms');
+    handleConnect();
+  }
+});
+</script>
+</body>
+</html>

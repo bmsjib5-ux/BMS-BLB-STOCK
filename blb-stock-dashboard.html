@@ -447,6 +447,21 @@
   .settings-btn:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
   .settings-btn.active { background: rgba(220,38,38,0.3); color: #f87171; border-color: #f87171; }
 
+  /* Nav Tabs */
+  .nav-tabs { display: flex; gap: 8px; margin-left: 16px; }
+  .nav-tab {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .nav-tab:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .nav-tab.active { background: rgba(220,38,38,0.3); color: #f87171; border-color: #f87171; }
+
   /* Settings Drawer */
   .settings-overlay {
     display: none;
@@ -515,7 +530,11 @@
     <div class="logo-shield">&#9879;</div>
     <h1>BMS <span>Blood Stock</span></h1>
   </div>
-  <span class="header-subtitle">Blood Inventory Dashboard</span>
+  <span class="header-subtitle">Stock Dashboard</span>
+  <div class="nav-tabs">
+    <a class="nav-tab active" href="blb-stock-dashboard.html">Stock</a>
+    <a class="nav-tab" href="blb-request-dashboard.html">Requests</a>
+  </div>
   <div class="header-spacer"></div>
   <button class="refresh-btn" id="refreshBtn" disabled onclick="loadDashboard()">
     <span id="refreshBtnText">Refresh</span>
