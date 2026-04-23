@@ -825,6 +825,7 @@ async function handleConnect() {
   document.getElementById('sessionStatusTxt').style.color = 'var(--success)';
 
   showToast('ok', `Connected: ${userInfo.name || 'OK'} @ ${userInfo.location || ''}`);
+  try { localStorage.setItem('blb-last-conn-mode', 'bms'); } catch(e) {}
 
   // Close settings drawer & load dashboard
   if (document.getElementById('settingsDrawer').classList.contains('open')) toggleSettings();
@@ -838,6 +839,7 @@ function disconnectSession() {
   connectionConfig = null;
   userInfo = null;
   removeSessionCookie();
+  try { localStorage.removeItem('blb-last-conn-mode'); } catch(e) {}
 
   document.getElementById('connectBtn').textContent = 'Connect Session';
   document.getElementById('connectBtn').classList.remove('connected');
@@ -990,6 +992,7 @@ async function handlePgConnect() {
 
       showToast('ok', `PostgreSQL Connected: ${cfg.database}@${cfg.host}`);
       connMode = 'pg';
+      try { localStorage.setItem('blb-last-conn-mode', 'pg'); } catch(e) {}
       if (document.getElementById('settingsDrawer').classList.contains('open')) toggleSettings();
       loadDashboard();
     } else {
@@ -1011,6 +1014,7 @@ function disconnectPg() {
   stopAutoRefresh();
   pgConnected = false;
   pgConfig = null;
+  try { localStorage.removeItem('blb-last-conn-mode'); } catch(e) {}
 
   document.getElementById('pgConnectBtn').textContent = 'Connect PostgreSQL';
   document.getElementById('pgConnectBtn').classList.remove('connected');
@@ -1727,7 +1731,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const savedPg = loadPgConfig();
   if (savedPg) fillPgFields(savedPg);
 
-  // Check URL param
+  // Check last connection mode
+  const lastMode = localStorage.getItem('blb-last-conn-mode') || 'bms';
+
+  // URL param has highest priority (BMS Session)
   const urlSession = getSessionFromUrl();
   if (urlSession) {
     document.getElementById('sessionId').value = urlSession;
@@ -1736,7 +1743,15 @@ window.addEventListener('DOMContentLoaded', () => {
     handleConnect();
     return;
   }
-  // Check cookie
+
+  // Auto-connect PG if last mode was pg and config exists
+  if (lastMode === 'pg' && savedPg && savedPg.apiUrl) {
+    switchConnMode('pg');
+    handlePgConnect();
+    return;
+  }
+
+  // Otherwise try BMS cookie
   const cookieSession = getSessionCookie();
   if (cookieSession) {
     document.getElementById('sessionId').value = cookieSession;
