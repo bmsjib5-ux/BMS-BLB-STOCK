@@ -811,8 +811,8 @@ function statusTag(name) {
   let bg = '#e5e7eb', fg = '#374151';
   if (n.includes('urgent') || n.includes('ด่วน')) { bg='#fee2e2'; fg='#991b1b'; }
   else if (n.includes('cancel') || n.includes('reject') || n.includes('ยกเลิก')) { bg='#e5e7eb'; fg='#4b5563'; }
-  else if (n.includes('complete') || n.includes('เสร็จ') || n.includes('รับ')) { bg='#dcfce7'; fg='#166534'; }
-  else if (n.includes('pending') || n.includes('รอ')) { bg='#fef3c7'; fg='#92400e'; }
+  else if (n.includes('รอ') || n.includes('pending')) { bg='#fef3c7'; fg='#92400e'; }
+  else if (n.includes('แล้ว') || n.includes('complete') || n.includes('เสร็จ')) { bg='#dcfce7'; fg='#166534'; }
   else if (n.includes('order') || n.includes('สั่ง')) { bg='#dbeafe'; fg='#1e40af'; }
   return `<span class="status-tag" style="background:${bg};color:${fg}">${escHtml(name || '-')}</span>`;
 }
@@ -824,7 +824,9 @@ function classifyRow(r) {
   const combined = status + ' ' + type;
   if (combined.includes('ด่วน') || combined.includes('urgent')) return 'urgent';
   if (status.includes('ยกเลิก') || status.includes('cancel') || status.includes('reject')) return 'cancelled';
-  if (status.includes('รับ') || status.includes('complete')) return 'received';
+  // "รับแล้ว" = received; "รอรับ" = still waiting → normal
+  if (status.includes('รอ') || status.includes('pending')) return 'normal';
+  if (status.includes('แล้ว') || status.includes('complete') || status.includes('เสร็จ')) return 'received';
   return 'normal';
 }
 
