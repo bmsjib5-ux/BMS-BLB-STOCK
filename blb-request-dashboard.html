@@ -593,12 +593,16 @@
 <!-- Content -->
 <div class="content" id="dashContent">
 
-  <!-- Date Filter -->
+  <!-- Filter Bar -->
   <div class="filter-bar">
     <span class="filter-label">&#128197; Order Date:</span>
     <input type="date" class="filter-date" id="dateFrom">
     <span>ถึง</span>
     <input type="date" class="filter-date" id="dateTo">
+    <span class="filter-label" style="margin-left:12px">&#127973; แผนก:</span>
+    <select class="filter-date" id="deptFilter" onchange="applyFilter()" style="min-width:200px;font-family:'Sarabun',sans-serif">
+      <option value="">-- ทั้งหมด --</option>
+    </select>
     <button class="filter-btn" onclick="loadDashboard()">ค้นหา</button>
     <div class="filter-quick">
       <button onclick="setQuickDate('today')">วันนี้</button>
@@ -1101,7 +1105,27 @@ async function loadDashboard() {
 
   dashboardData = data;
   document.getElementById('lastRefreshTime').textContent = `Last: ${nowStr()}`;
-  renderDashboard(data);
+  populateDeptFilter(data);
+  applyFilter();
+}
+
+function populateDeptFilter(data) {
+  const select = document.getElementById('deptFilter');
+  const prevValue = select.value;
+  const depts = [...new Set(data.map(r => r.department).filter(d => d))].sort();
+  select.innerHTML = '<option value="">-- ทั้งหมด --</option>' +
+    depts.map(d => {
+      const count = data.filter(r => r.department === d).length;
+      return `<option value="${escHtml(d)}">${escHtml(d)} (${count})</option>`;
+    }).join('');
+  // Restore previous selection if still exists
+  if (prevValue && depts.includes(prevValue)) select.value = prevValue;
+}
+
+function applyFilter() {
+  const dept = document.getElementById('deptFilter').value;
+  const filtered = dept ? dashboardData.filter(r => r.department === dept) : dashboardData;
+  renderDashboard(filtered);
 }
 
 function renderDashboard(data) {
