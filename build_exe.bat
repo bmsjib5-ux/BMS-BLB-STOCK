@@ -57,23 +57,37 @@ if %errorlevel% neq 0 (
 )
 
 echo.
+echo  Copying server files to dist\...
+echo  ==========================================
+
+:: Copy required files alongside the .exe
+copy /Y "server.js" "dist\" >nul
+copy /Y "package.json" "dist\" >nul
+if exist "package-lock.json" copy /Y "package-lock.json" "dist\" >nul
+copy /Y "blb-stock-dashboard.html" "dist\" >nul
+copy /Y "blb-request-dashboard.html" "dist\" >nul
+if exist ".env" copy /Y ".env" "dist\" >nul
+if exist ".env.example" copy /Y ".env.example" "dist\" >nul
+
+:: Copy node_modules (if exists - to skip npm install on target)
+if exist "node_modules\" (
+    echo  Copying node_modules...
+    xcopy /E /I /Q /Y "node_modules" "dist\node_modules" >nul
+)
+
+echo.
 echo  ==========================================
 echo    Build successful!
 echo  ==========================================
 echo.
-echo  Output: dist\BMS-BLB-Stock.exe
+echo  Output folder: dist\
+echo  Run: dist\BMS-BLB-Stock.exe
 echo.
-echo  Note: The .exe is a launcher only.
-echo  You still need:
-echo    - Node.js installed on the target machine
-echo    - server.js, package.json, *.html in the same folder as .exe
+echo  Files in dist\:
+dir /B dist
 echo.
-echo  Files needed alongside the .exe:
-echo    - server.js
-echo    - package.json
-echo    - blb-stock-dashboard.html
-echo    - blb-request-dashboard.html
-echo    - .env (optional, for default DB config)
+echo  Distribute the entire 'dist' folder.
+echo  Target machine needs Node.js installed.
 echo  ==========================================
 echo.
 

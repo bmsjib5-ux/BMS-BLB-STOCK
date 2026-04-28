@@ -19,10 +19,25 @@ URL = f"http://localhost:{PORT}"
 
 
 def app_dir():
-    """Return directory of this script (or .exe when frozen)"""
+    """Return directory containing server.js
+    Searches: .exe/script dir → parent dir → grandparent dir
+    """
     if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.abspath(__file__))
+        base = os.path.dirname(sys.executable)
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+
+    # Walk up to 3 levels looking for server.js
+    candidate = base
+    for _ in range(3):
+        if os.path.isfile(os.path.join(candidate, "server.js")):
+            return candidate
+        parent = os.path.dirname(candidate)
+        if parent == candidate:
+            break
+        candidate = parent
+    # Fallback to .exe directory
+    return base
 
 
 def find_node():
